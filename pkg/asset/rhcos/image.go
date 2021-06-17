@@ -15,6 +15,7 @@ import (
 	configaws "github.com/openshift/installer/pkg/asset/installconfig/aws"
 	"github.com/openshift/installer/pkg/rhcos"
 	"github.com/openshift/installer/pkg/types"
+	"github.com/openshift/installer/pkg/types/alibabacloud"
 	"github.com/openshift/installer/pkg/types/aws"
 	"github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/baremetal"
@@ -152,6 +153,9 @@ func osImage(config *types.InstallConfig) (string, error) {
 			return rhcos.FindArtifactURL(a)
 		}
 		return "", fmt.Errorf("%s: No vmware build found", st.FormatPrefix(archName))
+	case alibabacloud.Name:
+		//pass
+		return "", nil
 	case none.Name:
 		return "", nil
 	default:
