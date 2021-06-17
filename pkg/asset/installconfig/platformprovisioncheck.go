@@ -12,6 +12,7 @@ import (
 	ibmcloudconfig "github.com/openshift/installer/pkg/asset/installconfig/ibmcloud"
 	kubevirtconfig "github.com/openshift/installer/pkg/asset/installconfig/kubevirt"
 	osconfig "github.com/openshift/installer/pkg/asset/installconfig/openstack"
+	ovirtconfig "github.com/openshift/installer/pkg/asset/installconfig/ovirt"
 	vsconfig "github.com/openshift/installer/pkg/asset/installconfig/vsphere"
 	"github.com/openshift/installer/pkg/types/alibabacloud"
 	"github.com/openshift/installer/pkg/types/aws"
