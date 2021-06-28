@@ -2,6 +2,12 @@ package manifests
 
 import "github.com/openshift/installer/pkg/types/baremetal"
 
+// AlibabaCloudCredsSecretData holds encoded credentials and is used to generate cloud-creds secret
+type AlibabaCloudCredsSecretData struct {
+	Base64encodeAccessKeyID     string
+	Base64encodeSecretAccessKey string
+}
+
 // AwsCredsSecretData holds encoded credentials and is used to generate cloud-creds secret
 type AwsCredsSecretData struct {
 	Base64encodeAccessKeyID     string
@@ -53,13 +59,14 @@ type KubevirtCredsSecretData struct {
 }
 
 type cloudCredsSecretData struct {
-	AWS       *AwsCredsSecretData
-	Azure     *AzureCredsSecretData
-	GCP       *GCPCredsSecretData
-	OpenStack *OpenStackCredsSecretData
-	VSphere   *VSphereCredsSecretData
-	Ovirt     *OvirtCredsSecretData
-	Kubevirt  *KubevirtCredsSecretData
+	AlibabaCloud *AlibabaCloudCredsSecretData
+	AWS          *AwsCredsSecretData
+	Azure        *AzureCredsSecretData
+	GCP          *GCPCredsSecretData
+	OpenStack    *OpenStackCredsSecretData
+	VSphere      *VSphereCredsSecretData
+	Ovirt        *OvirtCredsSecretData
+	Kubevirt     *KubevirtCredsSecretData
 }
 
 type bootkubeTemplateData struct {

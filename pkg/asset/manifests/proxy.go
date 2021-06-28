@@ -14,6 +14,7 @@ import (
 
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
+	"github.com/openshift/installer/pkg/types/alibabacloud"
 	"github.com/openshift/installer/pkg/types/aws"
 	"github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/gcp"
@@ -147,6 +148,10 @@ func createNoProxy(installConfig *installconfig.InstallConfig, network *Networki
 		} else {
 			set.Insert(fmt.Sprintf(".%s.compute.internal", region))
 		}
+	}
+
+	if platform == alibabacloud.Name {
+		set.Insert("100.100.100.200")
 	}
 
 	// From https://cloud.google.com/vpc/docs/special-configurations add GCP metadata.
