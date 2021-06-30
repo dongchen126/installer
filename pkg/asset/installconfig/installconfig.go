@@ -31,10 +31,11 @@ const (
 
 // InstallConfig generates the install-config.yaml file.
 type InstallConfig struct {
-	Config *types.InstallConfig `json:"config"`
-	File   *asset.File          `json:"file"`
-	AWS    *aws.Metadata        `json:"aws,omitempty"`
-	Azure  *icazure.Metadata    `json:"azure,omitempty"`
+	Config       *types.InstallConfig   `json:"config"`
+	File         *asset.File            `json:"file"`
+	AWS          *aws.Metadata          `json:"aws,omitempty"`
+	Azure        *icazure.Metadata      `json:"azure,omitempty"`
+	AlibabaCloud *alibabacloud.Metadata `json:"alibabacloud,omitempty"`
 }
 
 var _ asset.WritableAsset = (*InstallConfig)(nil)
@@ -147,6 +148,9 @@ func (a *InstallConfig) finish(filename string) error {
 	if a.Config.AWS != nil {
 		a.AWS = aws.NewMetadata(a.Config.Platform.AWS.Region, a.Config.Platform.AWS.Subnets, a.Config.AWS.ServiceEndpoints)
 	}
+	if a.Config.AlibabaCloud != nil {
+		a.AlibabaCloud = alibabacloud.NewMetadata(a.Config.AlibabaCloud.Region, a.Config.BaseDomain)
+	}
 	if a.Config.Azure != nil {
 		a.Azure = icazure.NewMetadata(a.Config.Azure.CloudName, a.Config.Azure.ARMEndpoint)
 	}
@@ -174,7 +178,7 @@ func (a *InstallConfig) finish(filename string) error {
 
 func (a *InstallConfig) platformValidation() error {
 	if a.Config.Platform.AlibabaCloud != nil {
-		client, err := alibabacloud.NewClient(alibabacloud.DefaultRegion)
+		client, err := alibabacloud.NewClient(a.Config.AlibabaCloud.Region)
 		if err != nil {
 			return err
 		}

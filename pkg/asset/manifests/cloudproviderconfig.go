@@ -17,6 +17,7 @@ import (
 	kubevirtmanifests "github.com/openshift/installer/pkg/asset/manifests/kubevirt"
 	openstackmanifests "github.com/openshift/installer/pkg/asset/manifests/openstack"
 	vspheremanifests "github.com/openshift/installer/pkg/asset/manifests/vsphere"
+	alibabacloudtypes "github.com/openshift/installer/pkg/types/alibabacloud"
 	awstypes "github.com/openshift/installer/pkg/types/aws"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	baremetaltypes "github.com/openshift/installer/pkg/types/baremetal"
@@ -93,7 +94,10 @@ func (cpc *CloudProviderConfig) Generate(dependencies asset.Parents) error {
 			return nil
 		}
 		cm.Data[cloudProviderConfigCABundleDataKey] = trustBundle
-
+	case alibabacloudtypes.Name:
+		// TODO AlibabaCloud: CloudProviderConfig
+		// alibabacloudConfig := alibabacloudmanifests.CloudProviderConfig()
+		// cm.Data[cloudProviderConfigDataKey] = alibabacloudConfig
 	case openstacktypes.Name:
 		cloudProviderConfigData, cloudProviderConfigCABundleData, err := openstackmanifests.GenerateCloudProviderConfig(*installConfig.Config)
 		if err != nil {
