@@ -137,11 +137,11 @@ func (d *DNS) Generate(dependencies asset.Parents) error {
 		}
 
 		zoneName := ""
-		zoneId := ""
+		zoneID := ""
 		for _, zone := range privatezones.Zones.Zone {
 			if zone.ZoneName == installConfig.Config.BaseDomain {
 				zoneName = zone.ZoneName
-				zoneId = zone.ZoneId
+				zoneID = zone.ZoneId
 				break
 			}
 		}
@@ -151,11 +151,11 @@ func (d *DNS) Generate(dependencies asset.Parents) error {
 
 		if installConfig.Config.Publish == types.ExternalPublishingStrategy {
 			config.Spec.PublicZone = &configv1.DNSZone{
-				ID: zoneId,
+				ID: zoneID,
 			}
 		}
 		config.Spec.PrivateZone = &configv1.DNSZone{
-			ID: zoneId,
+			ID: zoneID,
 		}
 	case libvirttypes.Name, openstacktypes.Name, baremetaltypes.Name, nonetypes.Name, vspheretypes.Name, ovirttypes.Name, kubevirttypes.Name:
 	default:

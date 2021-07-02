@@ -633,7 +633,7 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 		}
 		bucket := fmt.Sprintf("%s-bootstrap", clusterID.InfraID)
 		auth := alibabacloudtfvars.Auth{
-			AccessKey: client.AccessKeyId,
+			AccessKey: client.AccessKeyID,
 			SecretKey: client.AccessKeySecret,
 		}
 
@@ -658,7 +658,7 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 		data, err := alibabacloudtfvars.TFVars(
 			alibabacloudtfvars.TFVarsSources{
 				Auth:            auth,
-				ResourceGroupId: installConfig.Config.AlibabaCloud.ResourceGroupName,
+				ResourceGroupID: installConfig.Config.AlibabaCloud.ResourceGroupName,
 				// VpcCidrBlock:
 				// VSwitchCidrBlocks:
 				Publish:    installConfig.Config.Publish,
