@@ -57,6 +57,11 @@ func (a *PlatformQuotaCheck) Generate(dependencies asset.Parents) error {
 	workersAsset := &machines.Worker{}
 	dependencies.Get(ic, mastersAsset, workersAsset)
 
+	// TODO: AlibabaCloud: quota checks
+	if ic.Config.Platform.Name() == alibabacloud.Name {
+		return nil
+	}
+
 	masters, err := mastersAsset.Machines()
 	if err != nil {
 		return err
@@ -137,7 +142,7 @@ func (a *PlatformQuotaCheck) Generate(dependencies asset.Parents) error {
 			return summarizeFailingReport(reports)
 		}
 		summarizeReport(reports)
-	case azure.Name, baremetal.Name, ibmcloud.Name, libvirt.Name, none.Name, ovirt.Name, vsphere.Name, kubevirt.Name, alibabacloud.Name:
+	case azure.Name, baremetal.Name, ibmcloud.Name, libvirt.Name, none.Name, ovirt.Name, vsphere.Name, kubevirt.Name:
 		// no special provisioning requirements to check
 	default:
 		err = fmt.Errorf("unknown platform type %q", platform)
