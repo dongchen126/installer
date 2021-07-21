@@ -21,9 +21,12 @@ variable "sg_id" {
   description = "The security group id of the master ECS."
 }
 
-variable "slb_id" {
-  type        = string
-  description = "The load balancer of the master ECS."
+variable "slb_external_id" {
+  type = string
+}
+
+variable "slb_internal_id" {
+  type = string
 }
 
 variable "instance_type" {

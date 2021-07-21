@@ -3,6 +3,10 @@ locals {
   prefix      = var.cluster_id
 }
 
+data "alicloud_instances" "bootstrap_data" {
+  ids = [alicloud_instance.bootstrap.id]
+}
+
 resource "alicloud_oss_bucket" "bucket" {
   bucket = var.ignition_bucket
   acl    = "private"

@@ -21,3 +21,7 @@ output "bootstrap_sg_id" {
 output "bootstrap_ecs_id" {
   value = alicloud_instance.bootstrap.id
 }
+
+output "bootstrap_ecs_ip" {
+  value = data.alicloud_instances.bootstrap_data.instances.0.private_ip
+}

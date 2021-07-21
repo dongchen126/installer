@@ -3,6 +3,10 @@ locals {
   prefix      = var.cluster_id
 }
 
+data "alicloud_instances" "master_data" {
+  ids = alicloud_instance.master.*.id
+}
+
 resource "alicloud_instance" "master" {
   count             = length(var.vswitch_ids)
   resource_group_id = var.resource_group_id
@@ -31,8 +35,14 @@ resource "alicloud_instance" "master" {
   )
 }
 
-resource "alicloud_slb_attachment" "slb_attachment_master" {
-  load_balancer_id = var.slb_id
+resource "alicloud_slb_attachment" "internal_slb_attachment_master" {
+  load_balancer_id = var.slb_internal_id
+  instance_ids     = alicloud_instance.master.*.id
+  weight           = 90
+}
+
+resource "alicloud_slb_attachment" "external_slb_attachment_master" {
+  load_balancer_id = var.slb_external_id
   instance_ids     = alicloud_instance.master.*.id
   weight           = 90
 }

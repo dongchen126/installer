@@ -35,6 +35,9 @@ module "pvtz" {
   base_domain       = var.base_domain
   slb_external_ip   = module.vpc.slb_external_ip
   slb_internal_ip   = module.vpc.slb_internal_ip
+  bootstrap_ip      = module.bootstrap.bootstrap_ecs_ip
+  master_count      = length(var.zone_ids)
+  master_ips        = module.master.master_ecs_private_ips
   tags              = local.tags
 }
 
@@ -51,7 +54,8 @@ module "master" {
   vpc_id               = module.vpc.vpc_id
   vswitch_ids          = module.vpc.vswitch_ids
   sg_id                = module.vpc.sg_master_id
-  slb_id               = module.vpc.slb_external_id
+  slb_external_id      = module.vpc.slb_external_id
+  slb_internal_id      = module.vpc.slb_internal_id
   instance_type        = var.instance_type
   image_id             = var.image_id
   system_disk_size     = var.system_disk_size
