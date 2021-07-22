@@ -16,9 +16,10 @@ require (
 	github.com/IBM-Cloud/terraform-provider-ibm v1.26.2
 	github.com/IBM/go-sdk-core/v5 v5.4.3
 	github.com/IBM/networking-go-sdk v0.14.0
-	github.com/IBM/platform-services-go-sdk v0.18.16
+	github.com/IBM/platform-services-go-sdk v0.18.13
 	github.com/IBM/vpc-go-sdk v1.0.1
 	github.com/Netflix/go-expect v0.0.0-20190729225929-0e00d9168667 // indirect
+	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1154
 	github.com/antchfx/xpath v1.1.2 // indirect
 	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/awalterschulze/gographviz v0.0.0-20190522210029-fa59802746ab
@@ -39,6 +40,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gophercloud/gophercloud v0.17.0
 	github.com/gophercloud/utils v0.0.0-20210323225332-7b186010c04f
+	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/h2non/filetype v1.0.12
 	github.com/hashicorp/go-azure-helpers v0.13.0
 	github.com/hashicorp/go-plugin v1.3.0
@@ -50,12 +52,12 @@ require (
 	github.com/hashicorp/vault v1.3.0 // indirect
 	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c // indirect
 	github.com/k8snetworkplumbingwg/network-attachment-definition-client v0.0.0-20191119172530-79f836b90111
+	github.com/klauspost/compress v1.11.8 // indirect
 	github.com/kubevirt/terraform-provider-kubevirt v0.0.0-00010101000000-000000000000
 	github.com/libvirt/libvirt-go v5.10.0+incompatible
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
 	github.com/masterzen/winrm v0.0.0-20190308153735-1d17eaf15943 // indirect
-	github.com/metal3-io/baremetal-operator v0.0.0-20210706141527-5240e42f012a
-	github.com/metal3-io/baremetal-operator/apis v0.0.0
+	github.com/metal3-io/baremetal-operator v0.0.0-20210527161605-4e331bfd4b1d
 	github.com/metal3-io/cluster-api-provider-baremetal v0.0.0
 	github.com/mitchellh/cli v1.1.1
 	github.com/openshift-metal3/terraform-provider-ironic v0.2.6
@@ -63,7 +65,7 @@ require (
 	github.com/openshift/client-go v0.0.0-20210409155308-a8e62c60e930
 	github.com/openshift/cloud-credential-operator v0.0.0-20200316201045-d10080b52c9e
 	github.com/openshift/cluster-api-provider-gcp v0.0.1-0.20201203141909-4dc702fd57a5
-	github.com/openshift/cluster-api-provider-ibmcloud v0.0.0-20210702173623-676faba9895d
+	github.com/openshift/cluster-api-provider-ibmcloud v0.0.0-20210608192136-4b79b3b71eec
 	github.com/openshift/cluster-api-provider-kubevirt v0.0.0-20201214114543-e5aed9c73f1f
 	github.com/openshift/cluster-api-provider-libvirt v0.2.1-0.20191219173431-2336783d4603
 	github.com/openshift/cluster-api-provider-ovirt v0.1.1-0.20210622084102-c4f9f269bcb7
@@ -74,6 +76,7 @@ require (
 	github.com/ovirt/terraform-provider-ovirt v0.99.1-0.20210628083913-78ce17b16709
 	github.com/packer-community/winrmcp v0.0.0-20180921211025-c76d91c1e7db // indirect
 	github.com/pborman/uuid v1.2.0
+	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.10.1
 	github.com/prometheus/client_golang v1.9.0
@@ -82,6 +85,7 @@ require (
 	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749 // indirect
 	github.com/shurcooL/vfsgen v0.0.0-20181202132449-6a9ea43bcacd
 	github.com/sirupsen/logrus v1.7.0
+	github.com/smartystreets/assertions v1.1.0 // indirect
 	github.com/spf13/cobra v1.1.1
 	github.com/stretchr/testify v1.7.0
 	github.com/terraform-provider-openstack/terraform-provider-openstack v1.37.0
@@ -123,13 +127,13 @@ require (
 replace (
 	cloud.google.com/go => cloud.google.com/go v0.57.0
 	github.com/IBM-Cloud/terraform-provider-ibm => github.com/openshift/terraform-provider-ibm v1.26.2-openshift-2
+	github.com/Sirupsen/logrus v0.0.0-20181010200618-458213699411 => github.com/sirupsen/logrus v0.0.0-20181010200618-458213699411
 	github.com/go-log/log => github.com/go-log/log v0.1.1-0.20181211034820-a514cf01a3eb // Pinned by MCO
 	github.com/hashicorp/terraform => github.com/openshift/terraform v0.12.20-openshift-4 // Pin to fork with deduplicated rpc types v0.12.20-openshift-4
 	github.com/hashicorp/terraform-plugin-sdk => github.com/openshift/hashicorp-terraform-plugin-sdk v1.14.0-openshift // Pin to fork with public rpc types
 	github.com/hashicorp/terraform-provider-vsphere => github.com/openshift/terraform-provider-vsphere v1.24.3-openshift
 	github.com/kubevirt/terraform-provider-kubevirt => github.com/nirarg/terraform-provider-kubevirt v0.0.0-20201222125919-101cee051ed3
-	github.com/metal3-io/baremetal-operator => github.com/openshift/baremetal-operator v0.0.0-20210706141527-5240e42f012a // Use OpenShift fork
-	github.com/metal3-io/baremetal-operator/apis => github.com/openshift/baremetal-operator/apis v0.0.0-20210706141527-5240e42f012a // Use OpenShift fork
+	github.com/metal3-io/baremetal-operator => github.com/openshift/baremetal-operator v0.0.0-20210527161605-4e331bfd4b1d // Use OpenShift fork
 	github.com/metal3-io/cluster-api-provider-baremetal => github.com/openshift/cluster-api-provider-baremetal v0.0.0-20190821174549-a2a477909c1d // Pin OpenShift fork
 	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20200929181438-91d71ef2122c // Pin client-go
 	github.com/openshift/machine-config-operator => github.com/openshift/machine-config-operator v0.0.1-0.20201009041932-4fe8559913b8 // Pin MCO so it doesn't get downgraded
