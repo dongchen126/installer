@@ -404,6 +404,21 @@ github.com/ScaleFT/sshkeys
 github.com/Shopify/sarama
 # github.com/agext/levenshtein v1.2.3
 github.com/agext/levenshtein
+# github.com/aliyun/alibaba-cloud-sdk-go v1.61.1154
+## explicit
+github.com/aliyun/alibaba-cloud-sdk-go/sdk
+github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth
+github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials
+github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials/provider
+github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/signers
+github.com/aliyun/alibaba-cloud-sdk-go/sdk/endpoints
+github.com/aliyun/alibaba-cloud-sdk-go/sdk/errors
+github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests
+github.com/aliyun/alibaba-cloud-sdk-go/sdk/responses
+github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils
+github.com/aliyun/alibaba-cloud-sdk-go/services/ecs
+github.com/aliyun/alibaba-cloud-sdk-go/services/pvtz
+github.com/aliyun/alibaba-cloud-sdk-go/services/resourcemanager
 # github.com/antchfx/xpath v1.1.2
 ## explicit
 # github.com/apache/openwhisk-client-go v0.0.0-20200201143223-a804fb82d105
@@ -974,6 +989,8 @@ github.com/gophercloud/utils/openstack/imageservice/v2/images
 github.com/gophercloud/utils/openstack/networking/v2/networks
 github.com/gophercloud/utils/terraform/auth
 github.com/gophercloud/utils/terraform/mutexkv
+# github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00
+## explicit
 # github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 github.com/gregjones/httpcache
 github.com/gregjones/httpcache/diskcache
@@ -1275,7 +1292,8 @@ github.com/keybase/go-crypto/openpgp/errors
 github.com/keybase/go-crypto/openpgp/packet
 github.com/keybase/go-crypto/openpgp/s2k
 github.com/keybase/go-crypto/rsa
-# github.com/klauspost/compress v1.11.0
+# github.com/klauspost/compress v1.11.8
+## explicit
 github.com/klauspost/compress/fse
 github.com/klauspost/compress/huff0
 github.com/klauspost/compress/snappy
@@ -1323,13 +1341,11 @@ github.com/mattn/go-colorable
 github.com/mattn/go-isatty
 # github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369
 github.com/matttproud/golang_protobuf_extensions/pbutil
-# github.com/metal3-io/baremetal-operator v0.0.0-20210706141527-5240e42f012a => github.com/openshift/baremetal-operator v0.0.0-20210706141527-5240e42f012a
-## explicit
-github.com/metal3-io/baremetal-operator/pkg/bmc
-github.com/metal3-io/baremetal-operator/pkg/hardware
-# github.com/metal3-io/baremetal-operator/apis v0.0.0 => github.com/openshift/baremetal-operator/apis v0.0.0-20210706141527-5240e42f012a
+# github.com/metal3-io/baremetal-operator v0.0.0-20210527161605-4e331bfd4b1d => github.com/openshift/baremetal-operator v0.0.0-20210527161605-4e331bfd4b1d
 ## explicit
 github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1
+github.com/metal3-io/baremetal-operator/pkg/bmc
+github.com/metal3-io/baremetal-operator/pkg/hardware
 # github.com/metal3-io/cluster-api-provider-baremetal v0.0.0 => github.com/openshift/cluster-api-provider-baremetal v0.0.0-20190821174549-a2a477909c1d
 ## explicit
 github.com/metal3-io/cluster-api-provider-baremetal/pkg/apis
@@ -1468,7 +1484,8 @@ github.com/pborman/uuid
 github.com/pelletier/go-toml
 # github.com/peterbourgon/diskv v2.0.1+incompatible
 github.com/peterbourgon/diskv
-# github.com/pierrec/lz4 v2.5.2+incompatible
+# github.com/pierrec/lz4 v2.6.0+incompatible
+## explicit
 github.com/pierrec/lz4
 github.com/pierrec/lz4/internal/xxh32
 # github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
@@ -1527,6 +1544,8 @@ github.com/shurcooL/vfsgen
 ## explicit
 github.com/sirupsen/logrus
 github.com/sirupsen/logrus/hooks/test
+# github.com/smartystreets/assertions v1.1.0
+## explicit
 # github.com/softlayer/softlayer-go v1.0.3
 github.com/softlayer/softlayer-go/config
 github.com/softlayer/softlayer-go/datatypes
@@ -2930,13 +2949,13 @@ sigs.k8s.io/structured-merge-diff/v4/value
 sigs.k8s.io/yaml
 # cloud.google.com/go => cloud.google.com/go v0.57.0
 # github.com/IBM-Cloud/terraform-provider-ibm => github.com/openshift/terraform-provider-ibm v1.26.2-openshift-2
+# github.com/Sirupsen/logrus v0.0.0-20181010200618-458213699411 => github.com/sirupsen/logrus v0.0.0-20181010200618-458213699411
 # github.com/go-log/log => github.com/go-log/log v0.1.1-0.20181211034820-a514cf01a3eb
 # github.com/hashicorp/terraform => github.com/openshift/terraform v0.12.20-openshift-4
 # github.com/hashicorp/terraform-plugin-sdk => github.com/openshift/hashicorp-terraform-plugin-sdk v1.14.0-openshift
 # github.com/hashicorp/terraform-provider-vsphere => github.com/openshift/terraform-provider-vsphere v1.24.3-openshift
 # github.com/kubevirt/terraform-provider-kubevirt => github.com/nirarg/terraform-provider-kubevirt v0.0.0-20201222125919-101cee051ed3
-# github.com/metal3-io/baremetal-operator => github.com/openshift/baremetal-operator v0.0.0-20210706141527-5240e42f012a
-# github.com/metal3-io/baremetal-operator/apis => github.com/openshift/baremetal-operator/apis v0.0.0-20210706141527-5240e42f012a
+# github.com/metal3-io/baremetal-operator => github.com/openshift/baremetal-operator v0.0.0-20210527161605-4e331bfd4b1d
 # github.com/metal3-io/cluster-api-provider-baremetal => github.com/openshift/cluster-api-provider-baremetal v0.0.0-20190821174549-a2a477909c1d
 # github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20200929181438-91d71ef2122c
 # github.com/openshift/machine-config-operator => github.com/openshift/machine-config-operator v0.0.1-0.20201009041932-4fe8559913b8
