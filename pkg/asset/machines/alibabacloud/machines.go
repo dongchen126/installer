@@ -74,8 +74,8 @@ func provider(clusterID string,
 	az := mpool.Zones[azIdx]
 
 	var resourceGroup string
-	if platform.ResourceGroupName != "" {
-		resourceGroup = platform.ResourceGroupName
+	if platform.ResourceGroupID != "" {
+		resourceGroup = platform.ResourceGroupID
 	} else {
 		return nil, errors.Errorf("Parameter 'ResourceGroup' is empty")
 	}
