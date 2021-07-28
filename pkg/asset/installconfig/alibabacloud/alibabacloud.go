@@ -16,10 +16,6 @@ const (
 	defaultAcceptLanguage = "en-US"
 )
 
-const (
-	noResourceGroup = "<none>"
-)
-
 // Platform collects AlibabaCloud-specific configuration.
 func Platform() (*alibabacloud.Platform, error) {
 	client, err := NewClient(defaultRegion)
@@ -43,8 +39,8 @@ func Platform() (*alibabacloud.Platform, error) {
 	}
 
 	return &alibabacloud.Platform{
-		Region:            region,
-		ResourceGroupName: resourceGroup,
+		Region:          region,
+		ResourceGroupID: resourceGroup,
 	}, nil
 }
 
@@ -108,18 +104,19 @@ func selectResourceGroup(client *Client) (string, error) {
 
 	groups := groupsResponse.ResourceGroups.ResourceGroup
 
+	if len(groups) == 0 {
+		return "", errors.Wrap(err, "resource group not found")
+	}
+
 	var options []string
 	names := make(map[string]string)
 
 	for _, group := range groups {
 		option := fmt.Sprintf("%s (%s)", group.Name, group.Id)
-		names[option] = group.Name
+		names[option] = group.Id
 		options = append(options, option)
 	}
 	sort.Strings(options)
-
-	options = append(options, noResourceGroup)
-	names[noResourceGroup] = ""
 
 	var selectedResourceGroup string
 	err = survey.Ask([]*survey.Question{
@@ -128,7 +125,6 @@ func selectResourceGroup(client *Client) (string, error) {
 				Message: "Resource Group",
 				Help:    "The resource group where the cluster will be provisioned.",
 				Options: options,
-				Default: noResourceGroup,
 			},
 		},
 	}, &selectedResourceGroup)

@@ -1154,14 +1154,13 @@ spec:
                     description: Region specifies the Alibaba Cloud region where the
                       cluster will be created.
                     type: string
-                  resourceGroupName:
-                    description: "ResourceGroupName is the name of an already existing
-                      resource group where the cluster should be installed. \n This
-                      resource group must be empty with no other resources when trying
-                      to use it for creating a cluster."
+                  resourceGroupID:
+                    description: ResourceGroupID is the ID of an already existing
+                      resource group where the cluster should be installed.
                     type: string
                 required:
                 - region
+                - resourceGroupID
                 type: object
               aws:
                 description: AWS is the configuration used when installing on AWS.

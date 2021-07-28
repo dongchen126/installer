@@ -18,7 +18,7 @@ func Validate(client *Client, ic *types.InstallConfig) error {
 func validatePlatform(client *Client, ic *types.InstallConfig, path *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if ic.Platform.AlibabaCloud.ResourceGroupName != "" {
+	if ic.Platform.AlibabaCloud.ResourceGroupID != "" {
 		allErrs = append(allErrs, validateResourceGroup(client, ic, path)...)
 	}
 	return allErrs
@@ -27,24 +27,24 @@ func validatePlatform(client *Client, ic *types.InstallConfig, path *field.Path)
 func validateResourceGroup(client *Client, ic *types.InstallConfig, path *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if ic.AlibabaCloud.ResourceGroupName == "" {
+	if ic.AlibabaCloud.ResourceGroupID == "" {
 		return allErrs
 	}
 
 	resourceGroups, err := client.ListResourceGroups()
 	if err != nil {
-		return append(allErrs, field.InternalError(path.Child("resourceGroupName"), err))
+		return append(allErrs, field.InternalError(path.Child("resourceGroupID"), err))
 	}
 
 	found := false
 	for _, rg := range resourceGroups.ResourceGroups.ResourceGroup {
-		if rg.Id == ic.AlibabaCloud.ResourceGroupName || rg.Name == ic.AlibabaCloud.ResourceGroupName {
+		if rg.Id == ic.AlibabaCloud.ResourceGroupID {
 			found = true
 		}
 	}
 
 	if !found {
-		return append(allErrs, field.NotFound(path.Child("resourceGroupName"), ic.AlibabaCloud.ResourceGroupName))
+		return append(allErrs, field.NotFound(path.Child("resourceGroupID"), ic.AlibabaCloud.ResourceGroupID))
 	}
 
 	return allErrs
