@@ -22,7 +22,12 @@ resource "alicloud_slb_listener" "listener_external_80" {
   sticky_session      = "on"
   sticky_session_type = "insert"
   cookie_timeout      = 86400
-  # TODO: AlibabaCloud: Add health check in a later PR
+  health_check              = "on"
+  health_check_connect_port = 80
+  healthy_threshold         = 2
+  unhealthy_threshold       = 2
+  health_check_timeout      = 10
+  health_check_interval     = 10
   x_forwarded_for {
     retrive_slb_ip = true
     retrive_slb_id = true
@@ -41,7 +46,12 @@ resource "alicloud_slb_listener" "listener_external_443" {
   sticky_session      = "on"
   sticky_session_type = "insert"
   cookie_timeout      = 86400
-  # TODO: AlibabaCloud: Add health check in a later PR
+  health_check              = "on"
+  health_check_connect_port = 443
+  healthy_threshold         = 2
+  unhealthy_threshold       = 2
+  health_check_timeout      = 10
+  health_check_interval     = 10
   x_forwarded_for {
     retrive_slb_ip = true
     retrive_slb_id = true
@@ -145,7 +155,12 @@ resource "alicloud_slb_listener" "listener_internal_80" {
   sticky_session      = "on"
   sticky_session_type = "insert"
   cookie_timeout      = 86400
-  # TODO: AlibabaCloud: Add health check in a later PR
+  health_check              = "on"
+  health_check_connect_port = 80
+  healthy_threshold         = 2
+  unhealthy_threshold       = 2
+  health_check_timeout      = 10
+  health_check_interval     = 10
   x_forwarded_for {
     retrive_slb_ip = true
     retrive_slb_id = true
@@ -163,7 +178,12 @@ resource "alicloud_slb_listener" "listener_internal_443" {
   sticky_session      = "on"
   sticky_session_type = "insert"
   cookie_timeout      = 86400
-  # TODO: AlibabaCloud: Add health check in a later PR
+  health_check              = "on"
+  health_check_connect_port = 443
+  healthy_threshold         = 2
+  unhealthy_threshold       = 2
+  health_check_timeout      = 10
+  health_check_interval     = 10
   x_forwarded_for {
     retrive_slb_ip = true
     retrive_slb_id = true
