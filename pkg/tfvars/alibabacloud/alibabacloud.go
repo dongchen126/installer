@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/openshift/installer/pkg/types"
+	"github.com/pkg/errors"
 )
 
 // Auth is the collection of credentials that will be used by terrform.
@@ -13,17 +14,18 @@ type Auth struct {
 }
 
 type config struct {
-	Auth               `json:",inline"`
-	Region             string         `json:"region_id"`
-	ZoneIDs            []string       `json:"zone_ids"`
-	ResourceGroupID    string         `json:"resource_group_id"`
-	InstanceType       string         `json:"instance_type"`
-	ImageID            string         `json:"image_id"`
-	SystemDiskSize     string         `json:"system_disk_size"`
-	SystemDiskCategory string         `json:"system_disk_category"`
-	KeyName            string         `json:"key_name"`
-	Tags               []*InstanceTag `json:"resource_tags"`
-	IgnitionBucket     string         `json:"ignition_bucket,omitempty"`
+	Auth                  `json:",inline"`
+	Region                string         `json:"region_id"`
+	ZoneIDs               []string       `json:"zone_ids"`
+	ResourceGroupID       string         `json:"resource_group_id"`
+	InstanceType          string         `json:"instance_type"`
+	ImageID               string         `json:"image_id"`
+	SystemDiskSize        string         `json:"system_disk_size"`
+	SystemDiskCategory    string         `json:"system_disk_category"`
+	KeyName               string         `json:"key_name"`
+	Tags                  []*InstanceTag `json:"resource_tags"`
+	IgnitionBucket        string         `json:"ignition_bucket,omitempty"`
+	BootstrapIgnitionStub string         `json:"bootstrap_stub_ignition"`
 }
 
 // TFVarsSources contains the parameters to be converted into Terraform variables
@@ -34,6 +36,7 @@ type TFVarsSources struct {
 	MasterConfigs         []*MachineProviderSpec
 	WorkerConfigs         []*MachineProviderSpec
 	IgnitionBucket        string
+	IgnitionPresignedURL  string
 	IgnitionFile          string
 	ImageID               string
 	SSHKey                string
@@ -65,6 +68,12 @@ func TFVars(sources TFVarsSources) ([]byte, error) {
 		Tags:               masterConfig.Tag,
 		IgnitionBucket:     sources.IgnitionBucket,
 	}
+
+	stubIgn, err := generateIgnitionShim(sources.IgnitionPresignedURL, sources.AdditionalTrustBundle)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create stub Ignition config for bootstrap")
+	}
+	cfg.BootstrapIgnitionStub = stubIgn
 
 	return json.MarshalIndent(cfg, "", "  ")
 }

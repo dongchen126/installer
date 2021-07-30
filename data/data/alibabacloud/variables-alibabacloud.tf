@@ -61,3 +61,11 @@ variable "ignition_bucket" {
   type = string
   description = "The name of the new OSS bucket."
 }
+
+variable "bootstrap_stub_ignition" {
+  type = string
+  description = <<EOF
+The stub Ignition config that should be used to boot the bootstrap instance. This already points to the presigned URL for the OSS bucket
+specified in ignition_bucket.
+EOF
+}

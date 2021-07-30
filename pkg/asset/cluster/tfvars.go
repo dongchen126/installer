@@ -699,6 +699,12 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 			return err
 		}
 		bucket := fmt.Sprintf("%s-bootstrap", clusterID.InfraID)
+		object := "bootstrap.ign"
+		signURL, err := client.GetOSSObjectSignURL(bucket, object)
+		if err != nil {
+			return err
+		}
+
 		auth := alibabacloudtfvars.Auth{
 			AccessKey: client.AccessKeyID,
 			SecretKey: client.AccessKeySecret,
@@ -729,6 +735,7 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 				MasterConfigs:         masterConfigs,
 				WorkerConfigs:         workerConfigs,
 				IgnitionBucket:        bucket,
+				IgnitionPresignedURL:  signURL,
 				AdditionalTrustBundle: installConfig.Config.AdditionalTrustBundle,
 				Architecture:          installConfig.Config.ControlPlane.Architecture,
 				Publish:               installConfig.Config.Publish,
