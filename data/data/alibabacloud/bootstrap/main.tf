@@ -7,6 +7,11 @@ data "alicloud_instances" "bootstrap_data" {
   ids = [alicloud_instance.bootstrap.id]
 }
 
+# Using this data source can enable OSS service automatically.
+data "alicloud_oss_service" "open" {
+    enable = "On"
+}
+
 resource "alicloud_oss_bucket" "bucket" {
   bucket = var.ignition_bucket
   acl    = "private"
