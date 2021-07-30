@@ -1,6 +1,7 @@
 package alibabacloud
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/pvtz"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/resourcemanager"
+	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/pkg/errors"
 )
 
@@ -194,6 +196,24 @@ func (client *Client) ListPrivateZones(zoneName string) (response *pvtz.Describe
 		BaseResponse: &responses.BaseResponse{},
 	}
 	err = client.doActionWithSetDomain(request, response)
+	return
+}
+
+// GetOSSObjectSignURL returns a presigned URL for a OSS object
+func (client *Client) GetOSSObjectSignURL(bucketName string, objectName string) (signedURL string, err error) {
+	endpoint := fmt.Sprintf("oss-%s.aliyuncs.com", client.RegionID)
+
+	ossClient, err := oss.New(endpoint, client.AccessKeyID, client.AccessKeySecret)
+	if err != nil {
+		return "", err
+	}
+
+	bucket, err := ossClient.Bucket(bucketName)
+	if err != nil {
+		return "", err
+	}
+
+	signedURL, err = bucket.SignURL(objectName, oss.HTTPGet, 60)
 	return
 }
 

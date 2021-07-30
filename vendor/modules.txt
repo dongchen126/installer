@@ -406,6 +406,9 @@ github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils
 github.com/aliyun/alibaba-cloud-sdk-go/services/ecs
 github.com/aliyun/alibaba-cloud-sdk-go/services/pvtz
 github.com/aliyun/alibaba-cloud-sdk-go/services/resourcemanager
+# github.com/aliyun/aliyun-oss-go-sdk v0.0.0-20190307165228-86c17b95fcd5
+## explicit
+github.com/aliyun/aliyun-oss-go-sdk/oss
 # github.com/antchfx/xpath v1.1.2
 ## explicit
 # github.com/apache/openwhisk-client-go v0.0.0-20200201143223-a804fb82d105

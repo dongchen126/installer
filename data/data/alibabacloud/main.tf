@@ -71,7 +71,7 @@ module "bootstrap" {
   resource_group_id    = var.resource_group_id
   ignition_file        = var.ignition_bootstrap_file
   ignition_bucket      = var.ignition_bucket
-  ignition             = var.ignition_bootstrap
+  ignition             = var.bootstrap_stub_ignition
   vpc_id               = module.vpc.vpc_id
   vswitch_id           = module.vpc.vswitch_ids[0]
   slb_id               = module.vpc.slb_external_id

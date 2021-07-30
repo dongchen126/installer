@@ -9,7 +9,7 @@ data "alicloud_instances" "bootstrap_data" {
 
 # Using this data source can enable OSS service automatically.
 data "alicloud_oss_service" "open" {
-    enable = "On"
+  enable = "On"
 }
 
 resource "alicloud_oss_bucket" "bucket" {
@@ -125,7 +125,7 @@ resource "alicloud_instance" "bootstrap" {
   system_disk_category    = var.system_disk_category
   system_disk_size        = var.system_disk_size
 
-  user_data = base64encode(var.ignition)
+  user_data = var.ignition
   key_name  = var.key_name
   tags = merge(
     {
