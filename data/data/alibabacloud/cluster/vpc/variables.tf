@@ -8,7 +8,7 @@ variable "region_id" {
 
 variable "zone_ids" {
   type        = list(string)
-  description = "The availability zones in which to create the masters and workers."
+  description = "The availability zones in which to create the masters."
 }
 
 variable "vpc_cidr_block" {

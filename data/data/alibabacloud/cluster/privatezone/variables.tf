@@ -22,16 +22,12 @@ variable "base_domain" {
 
 variable "slb_external_ip" {
   type        = string
-  description = "External API's SLB IP address."
+  description = "External SLB IP address."
 }
 
 variable "slb_internal_ip" {
   type        = string
-  description = "Internal API's SLB IP address."
-}
-
-variable "bootstrap_ip" {
-  type = string
+  description = "Internal SLB IP address."
 }
 
 variable "master_count" {

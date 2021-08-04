@@ -1,6 +1,19 @@
 locals {
   description = "Created By OpenShift Installer"
   prefix      = var.cluster_id
+  tags = merge(
+    {
+      "OCP"                                     = "ISV Integration",
+      "kubernetes.io/cluster/${var.cluster_id}" = "owned"
+    },
+    var.ali_resource_tags,
+  )
+}
+
+provider "alicloud" {
+  access_key = var.ali_access_key
+  secret_key = var.ali_secret_key
+  region     = var.ali_region_id
 }
 
 data "alicloud_instances" "bootstrap_data" {
@@ -13,20 +26,20 @@ data "alicloud_oss_service" "open" {
 }
 
 resource "alicloud_oss_bucket" "bucket" {
-  bucket = var.ignition_bucket
+  bucket = var.ali_ignition_bucket
   acl    = "private"
   tags = merge(
     {
       "Name" = "${local.prefix}-bucket"
     },
-    var.tags,
+    local.tags,
   )
 }
 
 resource "alicloud_oss_bucket_object" "ignition_file" {
   bucket = alicloud_oss_bucket.bucket.id
   key    = "bootstrap.ign"
-  source = var.ignition_file
+  source = var.ignition_bootstrap_file
   acl    = "private"
 }
 
@@ -80,7 +93,7 @@ resource "alicloud_ram_role_policy_attachment" "attach" {
 }
 
 resource "alicloud_security_group" "sg_bootstrap" {
-  resource_group_id = var.resource_group_id
+  resource_group_id = var.ali_resource_group_id
   name              = "${local.prefix}_sg_bootstrap"
   description       = local.description
   vpc_id            = var.vpc_id
@@ -109,13 +122,11 @@ resource "alicloud_security_group_rule" "sg_rule_journald_gateway" {
 }
 
 resource "alicloud_instance" "bootstrap" {
-  resource_group_id = var.resource_group_id
+  resource_group_id = var.ali_resource_group_id
 
-  instance_name              = "${local.prefix}_bootstrap"
-  instance_type              = var.instance_type
-  image_id                   = var.image_id
-  internet_max_bandwidth_out = 10
-
+  instance_name   = "${local.prefix}_bootstrap"
+  instance_type   = var.ali_bootstrap_instance_type
+  image_id        = var.ali_image_id
   vswitch_id      = var.vswitch_id
   security_groups = [alicloud_security_group.sg_bootstrap.id]
   role_name       = alicloud_ram_role.role.name
@@ -125,13 +136,13 @@ resource "alicloud_instance" "bootstrap" {
   system_disk_category    = var.system_disk_category
   system_disk_size        = var.system_disk_size
 
-  user_data = var.ignition
-  key_name  = var.key_name
+  user_data = var.ali_bootstrap_stub_ignition
+  key_name  = var.ali_key_name
   tags = merge(
     {
       "Name" = "${local.prefix}-bootstrap"
     },
-    var.tags,
+    local.tags,
   )
 }
 

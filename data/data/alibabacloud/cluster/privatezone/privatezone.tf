@@ -4,6 +4,11 @@ locals {
   cluster_name = split(".", var.cluster_domain)[0]
 }
 
+// Using this data source can open Private Zone service automatically.
+data "alicloud_pvtz_service" "open" {
+  enable = "On"
+}
+
 data "alicloud_alidns_domains" "dns_public" {
   domain_name_regex = "^${var.base_domain}$"
 }
@@ -49,14 +54,6 @@ resource "alicloud_pvtz_zone_record" "pvtz_record_api" {
   type    = "A"
   rr      = "api"
   value   = var.slb_internal_ip
-  ttl     = 60
-}
-
-resource "alicloud_pvtz_zone_record" "pvtz_record_bootstrap" {
-  zone_id = alicloud_pvtz_zone.pvtz.id
-  type    = "A"
-  rr      = "bootstrap"
-  value   = var.bootstrap_ip
   ttl     = 60
 }
 

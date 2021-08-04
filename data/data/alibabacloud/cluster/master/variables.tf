@@ -8,17 +8,17 @@ variable "resource_group_id" {
 
 variable "vpc_id" {
   type        = string
-  description = "The VPC id of the master ECS."
+  description = "The VPC ID of the master ECS."
 }
 
 variable "vswitch_ids" {
   type        = list(string)
-  description = "The VSwitch ids of the master ECS. Example: [vsw-xxx1, vsw-xxx2, vsw-xxx3]"
+  description = "The VSwitch IDs of the master ECS. Example: [vsw-xxx1, vsw-xxx2, vsw-xxx3]"
 }
 
 variable "sg_id" {
   type        = string
-  description = "The security group id of the master ECS."
+  description = "The security group ID of the master ECS."
 }
 
 variable "slb_external_id" {
@@ -36,7 +36,7 @@ variable "instance_type" {
 
 variable "image_id" {
   type        = string
-  description = "The image id of the master ECS."
+  description = "The image ID of the master ECS."
 }
 
 variable "system_disk_size" {
@@ -52,7 +52,7 @@ variable "system_disk_category" {
 
 variable "key_name" {
   type        = string
-  description = "The name of key pair that can login ECS instance successfully without password."
+  description = "The name of the key pair that can login ECS instance successfully without password."
 }
 
 variable "role_name" {

@@ -13,7 +13,6 @@ resource "alicloud_eip" "eips" {
   )
 }
 
-//Provides an Alicloud EIP Association resource for associating Elastic IP to Nat Gateway.
 resource "alicloud_eip_association" "eip_associations" {
   count         = length(var.zone_ids)
   allocation_id = alicloud_eip.eips[count.index].id

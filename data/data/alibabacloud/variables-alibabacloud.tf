@@ -1,52 +1,57 @@
-variable "access_key" {
+variable "ali_access_key" {
   type = string
 }
 
-variable "secret_key" {
+variable "ali_secret_key" {
   type = string
 }
 
-variable "region_id" {
+variable "ali_region_id" {
   type        = string
   description = "The target Alibaba Cloud region for the cluster."
 }
 
-variable "zone_ids" {
+variable "ali_zone_ids" {
   type        = list(string)
-  description = "The availability zones in which to create the masters and workers."
+  description = "The availability zones in which to create the masters."
 }
 
-variable "resource_group_id" {
+variable "ali_resource_group_id" {
   type = string
 }
 
-variable "instance_type" {
+variable "ali_bootstrap_instance_type" {
+  type        = string
+  description = "The instance type the bootstrap ECS."
+}
+
+variable "ali_master_instance_type" {
   type        = string
   description = "The instance type of the master ECS."
 }
 
-variable "image_id" {
+variable "ali_image_id" {
   type        = string
-  description = "The image id of the master ECS."
+  description = "The image ID of the master ECS."
 }
 
-variable "system_disk_size" {
+variable "ali_system_disk_size" {
   type        = number
   description = "The system disk size of the master ECS."
 }
 
-variable "system_disk_category" {
+variable "ali_system_disk_category" {
   type        = string
   description = "The system disk category of the master ECS.Valid values are cloud_efficiency, cloud_ssd, cloud_essd. Default value is cloud_essd."
   default     = "cloud_essd"
 }
 
-variable "key_name" {
+variable "ali_key_name" {
   type        = string
-  description = "The name of key pair that can login ECS instance successfully without password."
+  description = "The name of the key pair that can login ECS instance successfully without password."
 }
 
-variable "resource_tags" {
+variable "ali_resource_tags" {
   type = map(string)
 
   description = <<EOF
@@ -57,15 +62,15 @@ EOF
   default = {}
 }
 
-variable "ignition_bucket" {
+variable "ali_ignition_bucket" {
   type = string
-  description = "The name of the new OSS bucket."
+  description = "The OSS bucket where the ignition configuration is stored."
 }
 
-variable "bootstrap_stub_ignition" {
+variable "ali_bootstrap_stub_ignition" {
   type = string
   description = <<EOF
-The stub Ignition config that should be used to boot the bootstrap instance. This already points to the presigned URL for the OSS bucket
-specified in ignition_bucket.
+The stub Ignition configuration used to boot the bootstrap ECS instance. This already points to the presigned URL for the OSS bucket
+specified in ‘ali_ignition_bucket’.
 EOF
 }
