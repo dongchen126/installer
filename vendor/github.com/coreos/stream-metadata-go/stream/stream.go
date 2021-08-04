@@ -51,8 +51,20 @@ type Artifact struct {
 
 // Images contains images available in cloud providers
 type Images struct {
-	Aws *AwsImage `json:"aws,omitempty"`
-	Gcp *GcpImage `json:"gcp,omitempty"`
+	AlibabaCloud *AlibabaCloudImage `json:"alibabacloud,omitempty"`
+	Aws          *AwsImage          `json:"aws,omitempty"`
+	Gcp          *GcpImage          `json:"gcp,omitempty"`
+}
+
+// AlibabaCloudImage represents an image across all Alibaba Cloud regions
+type AlibabaCloudImage struct {
+	Regions map[string]AlibabaCloudRegionImage `json:"regions,omitempty"`
+}
+
+// AlibabaCloudRegionImage represents an image in one Alibaba Cloud region
+type AlibabaCloudRegionImage struct {
+	Release string `json:"release"`
+	Image   string `json:"image"`
 }
 
 // AwsImage represents an image across all AWS regions

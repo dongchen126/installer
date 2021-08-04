@@ -45,3 +45,22 @@ func (st *Stream) GetAMI(archname, region string) (string, error) {
 	}
 	return regionVal.Image, nil
 }
+
+// GetAlibabaImage returns the Alibaba Cloud machine image for a particular architecture and region.
+func (st *Stream) GetAlibabaImage(archname, region string) (string, error) {
+	starch, err := st.GetArchitecture(archname)
+	if err != nil {
+		return "", err
+	}
+	images := starch.Images.AlibabaCloud
+	if images == nil {
+		return "", fmt.Errorf("%s: No Alibaba Cloud images", st.FormatPrefix(archname))
+	}
+
+	var regionVal AlibabaCloudRegionImage
+	var ok bool
+	if regionVal, ok = images.Regions[region]; !ok {
+		return "", fmt.Errorf("%s: No Alibaba Cloud images in region %s", st.FormatPrefix(archname), region)
+	}
+	return regionVal.Image, nil
+}
