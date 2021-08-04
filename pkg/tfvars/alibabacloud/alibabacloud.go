@@ -9,23 +9,24 @@ import (
 
 // Auth is the collection of credentials that will be used by terrform.
 type Auth struct {
-	AccessKey string `json:"access_key"`
-	SecretKey string `json:"secret_key"`
+	AccessKey string `json:"ali_access_key"`
+	SecretKey string `json:"ali_secret_key"`
 }
 
 type config struct {
 	Auth                  `json:",inline"`
-	Region                string         `json:"region_id"`
-	ZoneIDs               []string       `json:"zone_ids"`
-	ResourceGroupID       string         `json:"resource_group_id"`
-	InstanceType          string         `json:"instance_type"`
-	ImageID               string         `json:"image_id"`
-	SystemDiskSize        string         `json:"system_disk_size"`
-	SystemDiskCategory    string         `json:"system_disk_category"`
-	KeyName               string         `json:"key_name"`
-	Tags                  []*InstanceTag `json:"resource_tags"`
-	IgnitionBucket        string         `json:"ignition_bucket,omitempty"`
-	BootstrapIgnitionStub string         `json:"bootstrap_stub_ignition"`
+	Region                string         `json:"ali_region_id"`
+	ZoneIDs               []string       `json:"ali_zone_ids"`
+	ResourceGroupID       string         `json:"ali_resource_group_id"`
+	BootstrapInstanceType string         `json:"ali_bootstrap_instance_type"`
+	MasterInstanceType    string         `json:"ali_master_instance_type"`
+	ImageID               string         `json:"ali_image_id"`
+	SystemDiskSize        string         `json:"ali_system_disk_size"`
+	SystemDiskCategory    string         `json:"ali_system_disk_category"`
+	KeyName               string         `json:"ali_key_name"`
+	Tags                  []*InstanceTag `json:"ali_resource_tags"`
+	IgnitionBucket        string         `json:"ali_ignition_bucket"`
+	BootstrapIgnitionStub string         `json:"ali_bootstrap_stub_ignition"`
 }
 
 // TFVarsSources contains the parameters to be converted into Terraform variables
@@ -56,17 +57,18 @@ func TFVars(sources TFVarsSources) ([]byte, error) {
 	}
 
 	cfg := &config{
-		Auth:               sources.Auth,
-		Region:             masterConfig.RegionID,
-		ZoneIDs:            zoneIDs,
-		ResourceGroupID:    sources.ResourceGroupID,
-		InstanceType:       masterConfig.InstanceType,
-		ImageID:            masterConfig.ImageID,
-		SystemDiskSize:     masterConfig.SystemDiskSize,
-		SystemDiskCategory: masterConfig.SystemDiskCategory,
-		KeyName:            workerConfig.KeyPairName,
-		Tags:               masterConfig.Tag,
-		IgnitionBucket:     sources.IgnitionBucket,
+		Auth:                  sources.Auth,
+		Region:                masterConfig.RegionID,
+		ZoneIDs:               zoneIDs,
+		ResourceGroupID:       sources.ResourceGroupID,
+		BootstrapInstanceType: masterConfig.InstanceType,
+		MasterInstanceType:    masterConfig.InstanceType,
+		ImageID:               masterConfig.ImageID,
+		SystemDiskSize:        masterConfig.SystemDiskSize,
+		SystemDiskCategory:    masterConfig.SystemDiskCategory,
+		KeyName:               workerConfig.KeyPairName,
+		Tags:                  masterConfig.Tag,
+		IgnitionBucket:        sources.IgnitionBucket,
 	}
 
 	stubIgn, err := generateIgnitionShim(sources.IgnitionPresignedURL, sources.AdditionalTrustBundle)
