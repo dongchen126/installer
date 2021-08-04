@@ -160,10 +160,22 @@ func osImage(config *types.InstallConfig) (string, error) {
 		}
 		return "", fmt.Errorf("%s: No vmware build found", st.FormatPrefix(archName))
 	case alibabacloud.Name:
-		if a, ok := streamArch.Artifacts["alibabacloud"]; ok {
-			return rhcos.FindArtifactURL(a)
+		if len(config.Platform.AlibabaCloud.ImageID) > 0 {
+			return config.Platform.AlibabaCloud.ImageID, nil
 		}
-		return "", fmt.Errorf("%s: No alibabacloud build found", st.FormatPrefix(archName))
+		return "", nil
+		// TODO Alibaba: waiting to update 'AlibabaCloudImage' in the
+		// 'https://github.com/coreos/stream-metadata-go/blob/main/stream/stream.go'
+
+		// region := config.Platform.AlibabaCloud.Region
+		// osimage, err := st.GetAlibabaImage(archName, region)
+		// if err != nil {
+		// 	return "", err
+		// }
+		// if region != config.Platform.AlibabaCloud.Region {
+		// 	osimage = fmt.Sprintf("%s,%s", osimage, region)
+		// }
+		// return osimage, nil
 	case none.Name:
 		return "", nil
 	default:

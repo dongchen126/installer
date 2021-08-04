@@ -1150,6 +1150,11 @@ spec:
                           type: string
                         type: array
                     type: object
+                  imageID:
+                    description: ImageID is the ID of image that should be used to
+                      boot machines for the cluster. If set, the image should belong
+                      to the same region as the cluster.
+                    type: string
                   region:
                     description: Region specifies the Alibaba Cloud region where the
                       cluster will be created.
