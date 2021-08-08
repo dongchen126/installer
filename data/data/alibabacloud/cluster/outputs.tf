@@ -21,3 +21,7 @@ output "sg_master_id" {
 output "sg_worker_id" {
   value = module.vpc.sg_worker_id
 }
+
+output "master_ecs_private_ips" {
+  value = module.master.master_ecs_private_ips
+}
