@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/openshift/installer/pkg/asset"
+	alibabacloudconfig "github.com/openshift/installer/pkg/asset/installconfig/alibabacloud"
 	awsconfig "github.com/openshift/installer/pkg/asset/installconfig/aws"
 	azconfig "github.com/openshift/installer/pkg/asset/installconfig/azure"
 	bmconfig "github.com/openshift/installer/pkg/asset/installconfig/baremetal"
@@ -118,7 +119,14 @@ func (a *PlatformProvisionCheck) Generate(dependencies asset.Parents) error {
 			return err
 		}
 	case alibabacloud.Name:
-		// TODO AlibabaCloud: add validation for provisioning
+		client, err := alibabacloudconfig.NewClient(ic.Config.AlibabaCloud.Region)
+		if err != nil {
+			return err
+		}
+		err = alibabacloudconfig.ValidateForProvisioning(client, ic.Config, ic.AlibabaCloud)
+		if err != nil {
+			return err
+		}
 	case libvirt.Name, none.Name:
 		// no special provisioning requirements to check
 	default:
