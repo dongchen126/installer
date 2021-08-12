@@ -9,4 +9,5 @@ type Metadata struct {
 	// Before deploying the cluster, the user must manually create a resource group.
 	// The parameter ResourceGroupID is required.
 	ResourceGroupID string `json:"resourceGroupID"`
+	ClusterDomain   string `json:"clusterDomain"`
 }
