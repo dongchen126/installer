@@ -4,7 +4,8 @@ package alibabacloud
 import (
 	"fmt"
 
-	alibabacloudprovider "github.com/openshift/installer/pkg/tfvars/alibabacloud"
+	// TODO Alibaba: In the future, will use this repo: github.com/openshift/cluster-api-provider-alibaba
+	alibabacloudprovider "github.com/AliyunContainerService/cluster-api-provider-alibabacloud/pkg/apis/alibabacloudprovider/v1beta1"
 	"github.com/openshift/installer/pkg/types"
 	"github.com/openshift/installer/pkg/types/alibabacloud"
 	machineapi "github.com/openshift/machine-api-operator/pkg/apis/machine/v1beta1"
@@ -70,7 +71,7 @@ func provider(clusterID string,
 	azIdx int,
 	role string,
 	userDataSecret string,
-) (*alibabacloudprovider.MachineProviderSpec, error) {
+) (*alibabacloudprovider.AlibabaCloudMachineProviderConfig, error) {
 	az := mpool.Zones[azIdx]
 
 	var resourceGroup string
@@ -80,12 +81,12 @@ func provider(clusterID string,
 		return nil, errors.Errorf("Parameter 'ResourceGroup' is empty")
 	}
 
-	return &alibabacloudprovider.MachineProviderSpec{
+	return &alibabacloudprovider.AlibabaCloudMachineProviderConfig{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "machine.openshift.io/v1beta1",
-			Kind:       "MachineProviderSpec",
+			Kind:       "AlibabaCloudMachineProviderConfig",
 		},
-		ImageID:           fmt.Sprintf("%s-rhcos", clusterID),
+		ImageID:           mpool.ImageID,
 		InstanceType:      mpool.InstanceType,
 		RegionID:          platform.Region,
 		ResourceGroupID:   resourceGroup,

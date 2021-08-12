@@ -81,6 +81,11 @@ spec:
                       description: AlibabaCloud is the configuration used when installing
                         on Alibaba Cloud.
                       properties:
+                        imageID:
+                          description: ImageID is the Image ID that should be used
+                            to create ECS instance. If set, the ImageID should belong
+                            to the same region as the cluster.
+                          type: string
                         instanceType:
                           description: InstanceType defines the ECS instance type.
                             eg. ecs.g6.large
@@ -539,6 +544,11 @@ spec:
                     description: AlibabaCloud is the configuration used when installing
                       on Alibaba Cloud.
                     properties:
+                      imageID:
+                        description: ImageID is the Image ID that should be used to
+                          create ECS instance. If set, the ImageID should belong to
+                          the same region as the cluster.
+                        type: string
                       instanceType:
                         description: InstanceType defines the ECS instance type. eg.
                           ecs.g6.large
@@ -1123,6 +1133,11 @@ spec:
                       used when installing on Alibaba Cloud for machine pools which
                       do not define their own platform configuration.
                     properties:
+                      imageID:
+                        description: ImageID is the Image ID that should be used to
+                          create ECS instance. If set, the ImageID should belong to
+                          the same region as the cluster.
+                        type: string
                       instanceType:
                         description: InstanceType defines the ECS instance type. eg.
                           ecs.g6.large

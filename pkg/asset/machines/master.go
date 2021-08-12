@@ -159,6 +159,14 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 	switch ic.Platform.Name() {
 	case alibabacloudtypes.Name:
 		mpool := defaultAlibabaCloudMachinePoolPlatform()
+
+		osImage := strings.SplitN(string(*rhcosImage), ",", 2)
+		osImageID := osImage[0]
+		if len(osImage) == 2 {
+			osImageID = ""
+		}
+		mpool.ImageID = osImageID
+
 		mpool.Set(ic.Platform.AlibabaCloud.DefaultMachinePlatform)
 		mpool.Set(pool.Platform.AlibabaCloud)
 		if len(mpool.Zones) == 0 {
@@ -173,7 +181,6 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 		if err != nil {
 			return errors.Wrap(err, "failed to create master machine objects")
 		}
-		// TODO AlibabaCloud: implement ConfigMasters() if needed
 	case awstypes.Name:
 		subnets := map[string]string{}
 		if len(ic.Platform.AWS.Subnets) > 0 {

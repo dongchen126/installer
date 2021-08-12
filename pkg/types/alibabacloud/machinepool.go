@@ -18,6 +18,12 @@ type MachinePool struct {
 	//
 	// +optional
 	SystemDisk `json:"systemDisk"`
+
+	// ImageID is the Image ID that should be used to create ECS instance.
+	// If set, the ImageID should belong to the same region as the cluster.
+	//
+	// +optional
+	ImageID string `json:"imageID"`
 }
 
 // Set sets the values from `required` to `a`.

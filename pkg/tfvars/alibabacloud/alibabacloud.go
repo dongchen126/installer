@@ -3,6 +3,8 @@ package alibabacloud
 import (
 	"encoding/json"
 
+	// TODO Alibaba: In the future, will use this repo: github.com/openshift/cluster-api-provider-alibaba
+	alibabacloudprovider "github.com/AliyunContainerService/cluster-api-provider-alibabacloud/pkg/apis/alibabacloudprovider/v1beta1"
 	"github.com/openshift/installer/pkg/types"
 	"github.com/pkg/errors"
 )
@@ -15,18 +17,18 @@ type Auth struct {
 
 type config struct {
 	Auth                  `json:",inline"`
-	Region                string         `json:"ali_region_id"`
-	ZoneIDs               []string       `json:"ali_zone_ids"`
-	ResourceGroupID       string         `json:"ali_resource_group_id"`
-	BootstrapInstanceType string         `json:"ali_bootstrap_instance_type"`
-	MasterInstanceType    string         `json:"ali_master_instance_type"`
-	ImageID               string         `json:"ali_image_id"`
-	SystemDiskSize        string         `json:"ali_system_disk_size"`
-	SystemDiskCategory    string         `json:"ali_system_disk_category"`
-	KeyName               string         `json:"ali_key_name"`
-	Tags                  []*InstanceTag `json:"ali_resource_tags"`
-	IgnitionBucket        string         `json:"ali_ignition_bucket"`
-	BootstrapIgnitionStub string         `json:"ali_bootstrap_stub_ignition"`
+	Region                string                     `json:"ali_region_id"`
+	ZoneIDs               []string                   `json:"ali_zone_ids"`
+	ResourceGroupID       string                     `json:"ali_resource_group_id"`
+	BootstrapInstanceType string                     `json:"ali_bootstrap_instance_type"`
+	MasterInstanceType    string                     `json:"ali_master_instance_type"`
+	ImageID               string                     `json:"ali_image_id"`
+	SystemDiskSize        int                        `json:"ali_system_disk_size"`
+	SystemDiskCategory    string                     `json:"ali_system_disk_category"`
+	KeyName               string                     `json:"ali_key_name"`
+	Tags                  []alibabacloudprovider.Tag `json:"tag,omitempty"`
+	IgnitionBucket        string                     `json:"ali_ignition_bucket"`
+	BootstrapIgnitionStub string                     `json:"ali_bootstrap_stub_ignition"`
 }
 
 // TFVarsSources contains the parameters to be converted into Terraform variables
@@ -34,8 +36,8 @@ type TFVarsSources struct {
 	Auth                  Auth
 	ResourceGroupID       string
 	BaseDomain            string
-	MasterConfigs         []*MachineProviderSpec
-	WorkerConfigs         []*MachineProviderSpec
+	MasterConfigs         []*alibabacloudprovider.AlibabaCloudMachineProviderConfig
+	WorkerConfigs         []*alibabacloudprovider.AlibabaCloudMachineProviderConfig
 	IgnitionBucket        string
 	IgnitionPresignedURL  string
 	IgnitionFile          string
@@ -67,7 +69,7 @@ func TFVars(sources TFVarsSources) ([]byte, error) {
 		SystemDiskSize:        masterConfig.SystemDiskSize,
 		SystemDiskCategory:    masterConfig.SystemDiskCategory,
 		KeyName:               workerConfig.KeyPairName,
-		Tags:                  masterConfig.Tag,
+		Tags:                  masterConfig.Tags,
 		IgnitionBucket:        sources.IgnitionBucket,
 	}
 

@@ -15,7 +15,9 @@ import (
 	kubevirtutils "github.com/openshift/cluster-api-provider-kubevirt/pkg/utils"
 	libvirtprovider "github.com/openshift/cluster-api-provider-libvirt/pkg/apis/libvirtproviderconfig/v1beta1"
 	ovirtprovider "github.com/openshift/cluster-api-provider-ovirt/pkg/apis/ovirtprovider/v1beta1"
-	alibabacloudprovider "github.com/openshift/installer/pkg/tfvars/alibabacloud"
+
+	// TODO Alibaba: In the future, will use this repo: github.com/openshift/cluster-api-provider-alibaba
+	alibabacloudprovider "github.com/AliyunContainerService/cluster-api-provider-alibabacloud/pkg/apis/alibabacloudprovider/v1beta1"
 	vsphereprovider "github.com/openshift/machine-api-operator/pkg/apis/vsphereprovider/v1beta1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -714,17 +716,17 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 		if err != nil {
 			return err
 		}
-		masterConfigs := make([]*alibabacloudprovider.MachineProviderSpec, len(masters))
+		masterConfigs := make([]*alibabacloudprovider.AlibabaCloudMachineProviderConfig, len(masters))
 		for i, m := range masters {
-			masterConfigs[i] = m.Spec.ProviderSpec.Value.Object.(*alibabacloudprovider.MachineProviderSpec)
+			masterConfigs[i] = m.Spec.ProviderSpec.Value.Object.(*alibabacloudprovider.AlibabaCloudMachineProviderConfig)
 		}
 		workers, err := workersAsset.MachineSets()
 		if err != nil {
 			return err
 		}
-		workerConfigs := make([]*alibabacloudprovider.MachineProviderSpec, len(workers))
+		workerConfigs := make([]*alibabacloudprovider.AlibabaCloudMachineProviderConfig, len(workers))
 		for i, w := range workers {
-			workerConfigs[i] = w.Spec.Template.Spec.ProviderSpec.Value.Object.(*alibabacloudprovider.MachineProviderSpec)
+			workerConfigs[i] = w.Spec.Template.Spec.ProviderSpec.Value.Object.(*alibabacloudprovider.AlibabaCloudMachineProviderConfig)
 		}
 
 		data, err := alibabacloudtfvars.TFVars(
