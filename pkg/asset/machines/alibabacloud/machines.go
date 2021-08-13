@@ -83,7 +83,7 @@ func provider(clusterID string,
 
 	return &alibabacloudprovider.AlibabaCloudMachineProviderConfig{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "machine.openshift.io/v1beta1",
+			APIVersion: "alibabacloudmachineproviderconfig.openshift.io/v1beta1",
 			Kind:       "AlibabaCloudMachineProviderConfig",
 		},
 		ImageID:           mpool.ImageID,
