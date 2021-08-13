@@ -22,6 +22,7 @@ github.com/AlecAivazis/survey/v2/core
 github.com/AlecAivazis/survey/v2/terminal
 # github.com/AliyunContainerService/cluster-api-provider-alibabacloud v0.1.0-alpha.4
 ## explicit
+github.com/AliyunContainerService/cluster-api-provider-alibabacloud/pkg/apis
 github.com/AliyunContainerService/cluster-api-provider-alibabacloud/pkg/apis/alibabacloudprovider/v1beta1
 # github.com/Azure/azure-sdk-for-go v51.2.0+incompatible
 ## explicit

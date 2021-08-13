@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	alibabacloudapi "github.com/AliyunContainerService/cluster-api-provider-alibabacloud/pkg/apis"
+	alibabacloudprovider "github.com/AliyunContainerService/cluster-api-provider-alibabacloud/pkg/apis/alibabacloudprovider/v1beta1"
 	"github.com/ghodss/yaml"
 	baremetalapi "github.com/metal3-io/cluster-api-provider-baremetal/pkg/apis"
 	baremetalprovider "github.com/metal3-io/cluster-api-provider-baremetal/pkg/apis/baremetal/v1alpha1"
@@ -548,6 +550,7 @@ func (m *Master) Load(f asset.FileFetcher) (found bool, err error) {
 // Machines returns master Machine manifest structures.
 func (m *Master) Machines() ([]machineapi.Machine, error) {
 	scheme := runtime.NewScheme()
+	alibabacloudapi.AddToScheme(scheme)
 	awsapi.AddToScheme(scheme)
 	azureapi.AddToScheme(scheme)
 	baremetalapi.AddToScheme(scheme)
@@ -559,6 +562,7 @@ func (m *Master) Machines() ([]machineapi.Machine, error) {
 	vsphereapi.AddToScheme(scheme)
 	kubevirtproviderapi.AddToScheme(scheme)
 	decoder := serializer.NewCodecFactory(scheme).UniversalDecoder(
+		alibabacloudprovider.SchemeGroupVersion,
 		awsprovider.SchemeGroupVersion,
 		azureprovider.SchemeGroupVersion,
 		baremetalprovider.SchemeGroupVersion,
