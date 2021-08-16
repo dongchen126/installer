@@ -3,6 +3,8 @@ package alibabacloud
 import (
 	"fmt"
 	"os"
+	"os/user"
+	"path/filepath"
 	"strings"
 
 	survey "github.com/AlecAivazis/survey/v2"
@@ -24,7 +26,17 @@ import (
 const (
 	ENVAccessKeyID     = "ALIBABA_CLOUD_ACCESS_KEY_ID"
 	ENVAccessKeySecret = "ALIBABA_CLOUD_ACCESS_KEY_SECRET"
+	ENVCredentialFile  = "ALIBABA_CLOUD_CREDENTIALS_FILE"
 )
+
+// Credential configuration file template.
+var inistr = `
+[default]              
+enable = true                    
+type = access_key                
+access_key_id = %s              
+access_key_secret = %s
+`
 
 // Client makes calls to the Alibaba Cloud API.
 type Client struct {
@@ -115,14 +127,11 @@ func askCredentials() (auth.Credential, error) {
 			},
 		},
 	}, &accessKeySecret)
-
 	if err != nil {
 		return nil, err
 	}
 
-	os.Setenv(ENVAccessKeyID, accessKeyID)
-	os.Setenv(ENVAccessKeySecret, accessKeySecret)
-
+	storeCredentials(accessKeyID, accessKeySecret)
 	return credentials.NewAccessKeyCredential(accessKeyID, accessKeySecret), nil
 }
 
@@ -236,4 +245,35 @@ func defaultEndpoint() map[string]string {
 		"resourcemanager": "resourcemanager.aliyuncs.com",
 		"ecs":             "ecs.aliyuncs.com",
 	}
+}
+
+func storeCredentials(accessKeyID string, accessKeySecret string) (err error) {
+	os.Setenv(ENVAccessKeyID, accessKeyID)
+	os.Setenv(ENVAccessKeySecret, accessKeySecret)
+
+	dirPath, ok := os.LookupEnv(ENVCredentialFile)
+	if !ok || dirPath == "" {
+		user, err := user.Current()
+		if err != nil {
+			return err
+		}
+		dirPath = user.HomeDir
+	}
+
+	dirPath = filepath.Join(dirPath, ".alibabacloud")
+	err = os.MkdirAll(dirPath, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	filePath := filepath.Join(dirPath, "credentials")
+
+	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	file.WriteString(fmt.Sprintf(inistr, accessKeyID, accessKeySecret))
+
+	return nil
 }
