@@ -90,22 +90,18 @@ spec:
                           description: InstanceType defines the ECS instance type.
                             eg. ecs.g6.large
                           type: string
-                        systemDisk:
-                          description: SystemDisk defines the system disk for ECS
-                            instances in the machine pool.
-                          properties:
-                            category:
-                              description: Category defines the category of the disk.
-                              type: string
-                            size:
-                              description: Size defines the size of the disk in gibibytes
-                                (GiB).
-                              minimum: 120
-                              type: integer
-                          required:
-                          - category
-                          - size
-                          type: object
+                        systemDiskCategory:
+                          description: SystemDiskCategory defines the category of
+                            the system disk.
+                          enum:
+                          - cloud_efficiency
+                          - cloud_essd
+                          type: string
+                        systemDiskSize:
+                          description: SystemDiskSize defines the size of the system
+                            disk in gibibytes (GiB).
+                          minimum: 120
+                          type: integer
                         zones:
                           description: Zones is list of availability zones that can
                             be used. eg. ["cn-hangzhou-i", "cn-hangzhou-h", "cn-hangzhou-j"]
@@ -553,22 +549,18 @@ spec:
                         description: InstanceType defines the ECS instance type. eg.
                           ecs.g6.large
                         type: string
-                      systemDisk:
-                        description: SystemDisk defines the system disk for ECS instances
-                          in the machine pool.
-                        properties:
-                          category:
-                            description: Category defines the category of the disk.
-                            type: string
-                          size:
-                            description: Size defines the size of the disk in gibibytes
-                              (GiB).
-                            minimum: 120
-                            type: integer
-                        required:
-                        - category
-                        - size
-                        type: object
+                      systemDiskCategory:
+                        description: SystemDiskCategory defines the category of the
+                          system disk.
+                        enum:
+                        - cloud_efficiency
+                        - cloud_essd
+                        type: string
+                      systemDiskSize:
+                        description: SystemDiskSize defines the size of the system
+                          disk in gibibytes (GiB).
+                        minimum: 120
+                        type: integer
                       zones:
                         description: Zones is list of availability zones that can
                           be used. eg. ["cn-hangzhou-i", "cn-hangzhou-h", "cn-hangzhou-j"]
@@ -1142,22 +1134,18 @@ spec:
                         description: InstanceType defines the ECS instance type. eg.
                           ecs.g6.large
                         type: string
-                      systemDisk:
-                        description: SystemDisk defines the system disk for ECS instances
-                          in the machine pool.
-                        properties:
-                          category:
-                            description: Category defines the category of the disk.
-                            type: string
-                          size:
-                            description: Size defines the size of the disk in gibibytes
-                              (GiB).
-                            minimum: 120
-                            type: integer
-                        required:
-                        - category
-                        - size
-                        type: object
+                      systemDiskCategory:
+                        description: SystemDiskCategory defines the category of the
+                          system disk.
+                        enum:
+                        - cloud_efficiency
+                        - cloud_essd
+                        type: string
+                      systemDiskSize:
+                        description: SystemDiskSize defines the size of the system
+                          disk in gibibytes (GiB).
+                        minimum: 120
+                        type: integer
                       zones:
                         description: Zones is list of availability zones that can
                           be used. eg. ["cn-hangzhou-i", "cn-hangzhou-h", "cn-hangzhou-j"]

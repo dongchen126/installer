@@ -14,10 +14,17 @@ type MachinePool struct {
 	// +optional
 	InstanceType string `json:"instanceType"`
 
-	// SystemDisk defines the system disk for ECS instances in the machine pool.
+	// SystemDiskCategory defines the category of the system disk.
 	//
+	// +kubebuilder:validation:Enum=cloud_efficiency;cloud_essd
 	// +optional
-	SystemDisk `json:"systemDisk"`
+	SystemDiskCategory string `json:"systemDiskCategory"`
+
+	// SystemDiskSize defines the size of the system disk in gibibytes (GiB).
+	//
+	// +kubebuilder:validation:Minimum=120
+	// +optional
+	SystemDiskSize int `json:"systemDiskSize"`
 
 	// ImageID is the Image ID that should be used to create ECS instance.
 	// If set, the ImageID should belong to the same region as the cluster.
@@ -40,11 +47,11 @@ func (a *MachinePool) Set(required *MachinePool) {
 		a.InstanceType = required.InstanceType
 	}
 
-	if required.SystemDisk.Size != 0 {
-		a.SystemDisk.Size = required.SystemDisk.Size
+	if required.SystemDiskSize != 0 {
+		a.SystemDiskSize = required.SystemDiskSize
 	}
-	if required.SystemDisk.Category != "" {
-		a.SystemDisk.Category = required.SystemDisk.Category
+	if required.SystemDiskCategory != "" {
+		a.SystemDiskCategory = required.SystemDiskCategory
 	}
 }
 
