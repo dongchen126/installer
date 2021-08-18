@@ -124,12 +124,13 @@ resource "alicloud_security_group_rule" "sg_rule_journald_gateway" {
 resource "alicloud_instance" "bootstrap" {
   resource_group_id = var.ali_resource_group_id
 
-  instance_name   = "${local.prefix}_bootstrap"
-  instance_type   = var.ali_bootstrap_instance_type
-  image_id        = var.ali_image_id
-  vswitch_id      = var.vswitch_id
-  security_groups = [alicloud_security_group.sg_bootstrap.id]
-  role_name       = alicloud_ram_role.role.name
+  instance_name              = "${local.prefix}_bootstrap"
+  instance_type              = var.ali_bootstrap_instance_type
+  image_id                   = var.ali_image_id
+  vswitch_id                 = var.vswitch_id
+  security_groups            = [alicloud_security_group.sg_bootstrap.id]
+  internet_max_bandwidth_out = 5
+  role_name                  = alicloud_ram_role.role.name
 
   system_disk_name        = "${local.prefix}_sys_disk-bootstrap"
   system_disk_description = local.description

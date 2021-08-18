@@ -1,3 +1,3 @@
-output "bootstrap_ecs_ip" {
-  value = data.alicloud_instances.bootstrap_data.instances.0.private_ip
+output "bootstrap_public_ip" {
+  value = data.alicloud_instances.bootstrap_data.instances.0.public_ip
 }
