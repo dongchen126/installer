@@ -128,7 +128,7 @@ resource "alicloud_instance" "bootstrap" {
   instance_type              = var.ali_bootstrap_instance_type
   image_id                   = var.ali_image_id
   vswitch_id                 = var.vswitch_id
-  security_groups            = [alicloud_security_group.sg_bootstrap.id]
+  security_groups            = [alicloud_security_group.sg_bootstrap.id, var.sg_master_id]
   internet_max_bandwidth_out = 5
   role_name                  = alicloud_ram_role.role.name
 

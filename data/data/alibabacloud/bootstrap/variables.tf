@@ -24,3 +24,8 @@ variable "system_disk_category" {
   description = "The system disk category of the bootstrap ECS.Valid values are cloud_efficiency, cloud_ssd, cloud_essd. Default value is cloud_essd."
   default     = "cloud_essd"
 }
+
+variable "sg_master_id" {
+  type        = string
+  description = "The security group ID of the master ECS."
+}
