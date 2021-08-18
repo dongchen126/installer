@@ -8,6 +8,8 @@ locals {
     },
     var.ali_resource_tags,
   )
+  system_disk_size     = 120
+  system_disk_category = "cloud_essd"
 }
 
 provider "alicloud" {
@@ -127,15 +129,15 @@ resource "alicloud_instance" "bootstrap" {
   instance_name              = "${local.prefix}_bootstrap"
   instance_type              = var.ali_bootstrap_instance_type
   image_id                   = var.ali_image_id
-  vswitch_id                 = var.vswitch_id
+  vswitch_id                 = var.vswitch_ids[0]
   security_groups            = [alicloud_security_group.sg_bootstrap.id, var.sg_master_id]
   internet_max_bandwidth_out = 5
   role_name                  = alicloud_ram_role.role.name
 
   system_disk_name        = "${local.prefix}_sys_disk-bootstrap"
   system_disk_description = local.description
-  system_disk_category    = var.system_disk_category
-  system_disk_size        = var.system_disk_size
+  system_disk_category    = local.system_disk_category
+  system_disk_size        = local.system_disk_size
 
   user_data = var.ali_bootstrap_stub_ignition
   key_name  = var.ali_key_name
@@ -148,7 +150,7 @@ resource "alicloud_instance" "bootstrap" {
 }
 
 resource "alicloud_slb_attachment" "slb_attachment_bootstrap" {
-  load_balancer_id = var.slb_id
+  load_balancer_id = var.slb_external_id
   instance_ids     = [alicloud_instance.bootstrap.id]
   weight           = 90
 }
