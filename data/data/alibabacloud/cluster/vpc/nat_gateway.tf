@@ -22,5 +22,5 @@ resource "alicloud_snat_entry" "snat_entry" {
   depends_on        = [alicloud_eip_association.eip_associations]
   snat_table_id     = alicloud_nat_gateway.nat_gateways[count.index].snat_table_ids
   source_vswitch_id = alicloud_vswitch.vswitchs[count.index].id
-  snat_ip           = alicloud_eip.eips[count.index].ip_address
+  snat_ip           = alicloud_eip_address.eips[count.index].ip_address
 }

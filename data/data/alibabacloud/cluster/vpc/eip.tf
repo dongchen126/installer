@@ -1,7 +1,7 @@
-resource "alicloud_eip" "eips" {
+resource "alicloud_eip_address" "eips" {
   count                = length(var.zone_ids)
   description          = local.description
-  name                 = "${local.prefix}-eip-${count.index}"
+  address_name         = "${local.prefix}-eip-${count.index}"
   bandwidth            = "10"
   internet_charge_type = "PayByBandwidth"
   resource_group_id    = var.resource_group_id
@@ -15,7 +15,7 @@ resource "alicloud_eip" "eips" {
 
 resource "alicloud_eip_association" "eip_associations" {
   count         = length(var.zone_ids)
-  allocation_id = alicloud_eip.eips[count.index].id
+  allocation_id = alicloud_eip_address.eips[count.index].id
   instance_id   = alicloud_nat_gateway.nat_gateways[count.index].id
   instance_type = "Nat"
 }

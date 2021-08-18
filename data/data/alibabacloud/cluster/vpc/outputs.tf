@@ -11,11 +11,11 @@ output "gw_ids" {
 }
 
 output "eip_ids" {
-  value = alicloud_eip.eips.*.id
+  value = alicloud_eip_address.eips.*.id
 }
 
 output "eip_ips" {
-  value = alicloud_eip.eips.*.ip_address
+  value = alicloud_eip_address.eips.*.ip_address
 }
 
 output "slb_external_id" {
