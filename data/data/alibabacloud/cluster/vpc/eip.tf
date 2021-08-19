@@ -1,21 +1,19 @@
-resource "alicloud_eip_address" "eips" {
-  count                = length(var.zone_ids)
+resource "alicloud_eip_address" "eip" {
   description          = local.description
-  address_name         = "${local.prefix}-eip-${count.index}"
+  address_name         = "${local.prefix}-eip"
   bandwidth            = "10"
   internet_charge_type = "PayByBandwidth"
   resource_group_id    = var.resource_group_id
   tags = merge(
     {
-      "Name" = "${local.prefix}-eip-${count.index}"
+      "Name" = "${local.prefix}-eip"
     },
     var.tags,
   )
 }
 
-resource "alicloud_eip_association" "eip_associations" {
-  count         = length(var.zone_ids)
-  allocation_id = alicloud_eip_address.eips[count.index].id
-  instance_id   = alicloud_nat_gateway.nat_gateways[count.index].id
+resource "alicloud_eip_association" "eip_association" {
+  allocation_id = alicloud_eip_address.eip.id
+  instance_id   = alicloud_nat_gateway.nat_gateway.id
   instance_type = "Nat"
 }

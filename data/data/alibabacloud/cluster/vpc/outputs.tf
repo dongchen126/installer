@@ -6,16 +6,16 @@ output "vswitch_ids" {
   value = alicloud_vswitch.vswitchs.*.id
 }
 
-output "gw_ids" {
-  value = alicloud_nat_gateway.nat_gateways.*.id
+output "gw_id" {
+  value = alicloud_nat_gateway.nat_gateway.id
 }
 
-output "eip_ids" {
-  value = alicloud_eip_address.eips.*.id
+output "eip_id" {
+  value = alicloud_eip_address.eip.id
 }
 
-output "eip_ips" {
-  value = alicloud_eip_address.eips.*.ip_address
+output "eip_ip" {
+  value = alicloud_eip_address.eip.ip_address
 }
 
 output "slb_external_id" {
