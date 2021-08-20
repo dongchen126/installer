@@ -23,7 +23,6 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/vpc"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 
-	"github.com/openshift/installer/pkg/asset/installconfig"
 	icalibabacloud "github.com/openshift/installer/pkg/asset/installconfig/alibabacloud"
 	"github.com/openshift/installer/pkg/destroy/providers"
 	"github.com/openshift/installer/pkg/types"
@@ -34,7 +33,6 @@ type ClusterUninstaller struct {
 	Logger          logrus.FieldLogger
 	Auth            auth.Credential
 	Region          string
-	BaseDomain      string
 	InfraID         string
 	ClusterID       string
 	ClusterDomain   string
@@ -103,10 +101,7 @@ func (o *ClusterUninstaller) configureClients() error {
 
 // New returns an Alibaba Cloud destroyer from ClusterMetadata.
 func New(logger logrus.FieldLogger, metadata *types.ClusterMetadata) (providers.Destroyer, error) {
-	installConfig := &installconfig.InstallConfig{}
-
 	region := metadata.ClusterPlatformMetadata.AlibabaCloud.Region
-	baseDomain := installConfig.Config.BaseDomain
 	client, err := icalibabacloud.NewClient(region)
 	if err != nil {
 		return nil, err
@@ -119,7 +114,6 @@ func New(logger logrus.FieldLogger, metadata *types.ClusterMetadata) (providers.
 		Auth:          auth,
 		Region:        region,
 		ClusterID:     metadata.InfraID,
-		BaseDomain:    baseDomain,
 		ClusterDomain: metadata.AlibabaCloud.ClusterDomain,
 	}, nil
 }
@@ -133,7 +127,7 @@ func (o *ClusterUninstaller) Run() error {
 		return err
 	}
 
-	err = deleteDNSRecords(*o.dnsClient, o.BaseDomain)
+	err = deleteDNSRecords(*o.dnsClient, o.ClusterDomain)
 	if err != nil {
 		errs = append(errs, err, errors.Wrap(err, "failed to delete DNS records"))
 		return utilerrors.NewAggregate(errs)
@@ -873,8 +867,8 @@ func listPrivateZone(pvtzClient pvtz.Client, clusterDomain string) ([]pvtz.Zone,
 	return response.Zones.Zone, nil
 }
 
-func deleteDNSRecords(dnsClient alidns.Client, baseDomain string) (err error) {
-
+func deleteDNSRecords(dnsClient alidns.Client, clusterDomain string) (err error) {
+	baseDomain := strings.Join(strings.Split(clusterDomain, ".")[1:], ".")
 	domains, err := listDomain(dnsClient, baseDomain)
 	if err != nil {
 		return
