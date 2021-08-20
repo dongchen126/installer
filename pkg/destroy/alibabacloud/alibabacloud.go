@@ -60,6 +60,8 @@ type ResourceArn struct {
 func (o *ClusterUninstaller) configureClients() error {
 	var err error
 	config := sdk.NewConfig()
+	config.AutoRetry = true
+	config.MaxRetryTime = 3
 
 	o.ecsClient, err = ecs.NewClientWithOptions(o.Region, config, o.Auth)
 	if err != nil {
@@ -706,6 +708,7 @@ func deleteRAMRoles(ramClient ram.Client, infraID string) (err error) {
 
 func deleteRAMRole(ramClient ram.Client, roleName string) (err error) {
 	request := ram.CreateDeleteRoleRequest()
+	request.Scheme = "https"
 	request.RoleName = roleName
 	_, err = ramClient.DeleteRole(request)
 	return
@@ -761,6 +764,7 @@ func deleteRAMPolicys(ramClient ram.Client, infraID string) (err error) {
 
 func getPolicy(ramClient ram.Client, policyName string) (response *ram.GetPolicyResponse, err error) {
 	request := ram.CreateGetPolicyRequest()
+	request.Scheme = "https"
 	request.PolicyName = policyName
 	request.PolicyType = "Custom"
 	response, err = ramClient.GetPolicy(request)
@@ -769,6 +773,7 @@ func getPolicy(ramClient ram.Client, policyName string) (response *ram.GetPolicy
 
 func deletePolicy(ramClient ram.Client, policyName string) (err error) {
 	request := ram.CreateDeletePolicyRequest()
+	request.Scheme = "https"
 	request.PolicyName = policyName
 	_, err = ramClient.DeletePolicy(request)
 	return
