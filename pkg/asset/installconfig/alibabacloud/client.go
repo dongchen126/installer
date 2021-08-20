@@ -235,7 +235,7 @@ func (client *Client) GetOSSObjectSignURL(bucketName string, objectName string) 
 		return "", err
 	}
 
-	signedURL, err = bucket.SignURL(objectName, oss.HTTPGet, 60)
+	signedURL, err = bucket.SignURL(objectName, oss.HTTPGet, 7200)
 	return
 }
 
