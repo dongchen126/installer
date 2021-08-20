@@ -67,7 +67,7 @@ resource "alicloud_ram_role" "role" {
 }
 
 resource "alicloud_ram_policy" "role_policy" {
-  policy_name = "${local.prefix}-bootstrap-policy"
+  policy_name = "${local.prefix}-policy-bootstrap"
   policy_document = <<EOF
   {
     "Statement": [

@@ -18,9 +18,11 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/pvtz"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ram"
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/resourcemanager"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/slb"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/tag"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/vpc"
+	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 
 	icalibabacloud "github.com/openshift/installer/pkg/asset/installconfig/alibabacloud"
@@ -31,20 +33,27 @@ import (
 // ClusterUninstaller holds the various options for the cluster we want to delete
 type ClusterUninstaller struct {
 	Logger          logrus.FieldLogger
+	AccessKeyID     string
+	AccessKeySecret string
 	Auth            auth.Credential
+
 	Region          string
 	InfraID         string
 	ClusterID       string
 	ClusterDomain   string
 	ResourceGroupID string
+	TagKey          string
+	TagValue        string
 
-	ecsClient  *ecs.Client
-	dnsClient  *alidns.Client
-	pvtzClient *pvtz.Client
-	vpcClient  *vpc.Client
-	ramClient  *ram.Client
-	tagClient  *tag.Client
-	slbClient  *slb.Client
+	ecsClient      *ecs.Client
+	dnsClient      *alidns.Client
+	pvtzClient     *pvtz.Client
+	vpcClient      *vpc.Client
+	ramClient      *ram.Client
+	tagClient      *tag.Client
+	slbClient      *slb.Client
+	ossClient      *oss.Client
+	rmanagerClient *resourcemanager.Client
 }
 
 // ResourceArn holds the information contained in the cloud resource Arn string
@@ -62,6 +71,7 @@ func (o *ClusterUninstaller) configureClients() error {
 	config := sdk.NewConfig()
 	config.AutoRetry = true
 	config.MaxRetryTime = 3
+	ossEndpoint := fmt.Sprintf("http://oss-%s.aliyuncs.com", o.Region)
 
 	o.ecsClient, err = ecs.NewClientWithOptions(o.Region, config, o.Auth)
 	if err != nil {
@@ -98,6 +108,16 @@ func (o *ClusterUninstaller) configureClients() error {
 		return err
 	}
 
+	o.ossClient, err = oss.New(ossEndpoint, o.AccessKeyID, o.AccessKeySecret)
+	if err != nil {
+		return err
+	}
+
+	o.rmanagerClient, err = resourcemanager.NewClientWithOptions(o.Region, config, o.Auth)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -112,51 +132,57 @@ func New(logger logrus.FieldLogger, metadata *types.ClusterMetadata) (providers.
 	auth := credentials.NewAccessKeyCredential(client.AccessKeyID, client.AccessKeySecret)
 
 	return &ClusterUninstaller{
-		Logger:        logger,
-		Auth:          auth,
-		Region:        region,
-		ClusterID:     metadata.InfraID,
-		ClusterDomain: metadata.AlibabaCloud.ClusterDomain,
+		Logger:          logger,
+		Auth:            auth,
+		AccessKeyID:     client.AccessKeyID,
+		AccessKeySecret: client.AccessKeySecret,
+		Region:          region,
+		InfraID:         metadata.InfraID,
+		ClusterID:       metadata.ClusterID,
+		ClusterDomain:   metadata.AlibabaCloud.ClusterDomain,
+		TagKey:          fmt.Sprintf("kubernetes.io/cluster/%s", metadata.InfraID),
+		TagValue:        "owned",
 	}, nil
 }
 
 // Run is the entrypoint to start the uninstall process.
-func (o *ClusterUninstaller) Run() error {
+func (o *ClusterUninstaller) Run() (*types.ClusterQuota, error)  {
 	var errs []error
 	var err error
 	err = o.configureClients()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = deleteDNSRecords(*o.dnsClient, o.ClusterDomain)
+	baseDomain := strings.Join(strings.Split(o.ClusterDomain, ".")[1:], ".")
+	err = o.deleteDNSRecords(baseDomain)
 	if err != nil {
 		errs = append(errs, err, errors.Wrap(err, "failed to delete DNS records"))
-		return utilerrors.NewAggregate(errs)
+		return nil, utilerrors.NewAggregate(errs)
 	}
 
-	err = deletePrivateZones(*o.pvtzClient, o.ClusterDomain)
+	bucketName := fmt.Sprintf("%s-bootstrap", o.InfraID)
+	err = o.deleteBucket(bucketName)
+	if err != nil {
+		return nil, err
+	}
+
+	err = o.deletePrivateZones(o.ClusterDomain)
 	if err != nil {
 		errs = append(errs, err, errors.Wrap(err, "failed to delete private zones"))
-		return utilerrors.NewAggregate(errs)
+		return nil, utilerrors.NewAggregate(errs)
 	}
 
-	err = deleteRAMPolicys(*o.ramClient, o.InfraID)
+	err = o.deleteRAMRoles()
 	if err != nil {
 		errs = append(errs, err, errors.Wrap(err, "failed to delete RAM role policys"))
-		return utilerrors.NewAggregate(errs)
+		return nil, utilerrors.NewAggregate(errs)
 	}
 
-	err = deleteRAMRoles(*o.ramClient, o.InfraID)
-	if err != nil {
-		errs = append(errs, err, errors.Wrap(err, "failed to delete RAM role policys"))
-		return utilerrors.NewAggregate(errs)
-	}
-
-	tagResources, err := findResourcesByTag(*o.tagClient, o.InfraID)
+	tagResources, err := o.findResourcesByTag()
 	if err != nil {
 		errs = append(errs, err, errors.Wrap(err, "failed to find resource by tag"))
-		return utilerrors.NewAggregate(errs)
+		return nil, utilerrors.NewAggregate(errs)
 	}
 	if len(tagResources) > 0 {
 		var deletedResources []ResourceArn
@@ -164,22 +190,22 @@ func (o *ClusterUninstaller) Run() error {
 			arn, err := convertResourceArn(resource.ResourceARN)
 			if err != nil {
 				errs = append(errs, err)
-				return utilerrors.NewAggregate(errs)
+				return nil, utilerrors.NewAggregate(errs)
 			}
 			deletedResources = append(deletedResources, arn)
 		}
 
-		err = deleteResourceByArn(*o.ecsClient, *o.vpcClient, *o.slbClient, *o.tagClient, deletedResources)
+		err = o.deleteResourceByArn(deletedResources)
 		if err != nil {
 			errs = append(errs, err)
-			return utilerrors.NewAggregate(errs)
+			return nil, utilerrors.NewAggregate(errs)
 		}
 	}
 
-	return utilerrors.NewAggregate(errs)
+	return nil, utilerrors.NewAggregate(errs)
 }
 
-func deleteResourceByArn(ecsClient ecs.Client, vpcClient vpc.Client, slbClient slb.Client, tagClient tag.Client, resourceArns []ResourceArn) (err error) {
+func (o *ClusterUninstaller) deleteResourceByArn(resourceArns []ResourceArn) (err error) {
 	var deletedInstances []ResourceArn
 	var deletedVpcs []ResourceArn
 	var deletedVSwitchs []ResourceArn
@@ -225,47 +251,56 @@ func deleteResourceByArn(ecsClient ecs.Client, vpcClient vpc.Client, slbClient s
 		}
 	}
 
-	err = deleteEcsInstances(ecsClient, deletedInstances)
-	if err != nil {
-		return err
+	if len(deletedInstances) > 0 {
+		err = o.deleteEcsInstances(deletedInstances)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = deleteSecurityGroups(ecsClient, deletedSecurityGroups)
-	if err != nil {
-		return err
+	if len(deletedSecurityGroups) > 0 {
+		err = o.deleteSecurityGroups(deletedSecurityGroups)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = deleteNatGatways(vpcClient, deletedNatGatways)
-	if err != nil {
-		return err
+	if len(deletedNatGatways) > 0 {
+		err = o.deleteNatGatways(deletedNatGatways)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = deleteEips(vpcClient, deletedEips)
-	if err != nil {
-		return err
+	if len(deletedEips) > 0 {
+		err = o.deleteEips(deletedEips)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = deleteEips(vpcClient, deletedEips)
-	if err != nil {
-		return err
+	if len(deletedSlbs) > 0 {
+		err = o.deleteSlbs(deletedSlbs)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = deleteSlbs(slbClient, deletedSlbs)
-	if err != nil {
-		return err
+	if len(deletedVSwitchs) > 0 {
+		err = o.deleteVSwitchs(deletedVSwitchs)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = deleteVSwitchs(vpcClient, deletedVSwitchs)
-	if err != nil {
-		return err
+	if len(deletedVpcs) > 0 {
+		err = o.deleteVpcs(deletedVpcs)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = deleteVpcs(vpcClient, deletedVpcs)
-	if err != nil {
-		return err
-	}
-
-	err = checkOthers(tagClient, others)
+	err = o.checkOthers(others)
 	if err != nil {
 		return err
 	}
@@ -273,38 +308,114 @@ func deleteResourceByArn(ecsClient ecs.Client, vpcClient vpc.Client, slbClient s
 	return nil
 }
 
-func checkOthers(tagClient tag.Client, resourceArns []ResourceArn) (err error) {
-	var arns []string
-	for _, Arn := range resourceArns {
-		arns = append(arns, Arn.Arn)
+func (o *ClusterUninstaller) checkOthers(resourceArns []ResourceArn) (err error) {
+	if len(resourceArns) == 0 {
+		return nil
 	}
 
-	request := tag.CreateListTagResourcesRequest()
-	request.PageSize = "1000"
-	request.ResourceARN = &arns
-	response, err := tagClient.ListTagResources(request)
-	if err != nil {
-		return err
-	}
+	tagResources, err := o.findResourcesByTag()
 
-	if len(response.TagResources) > 0 {
+	if len(tagResources) > 0 {
 		notDeletedResources := []string{}
-		for _, arn := range response.TagResources {
+		for _, arn := range tagResources {
 			notDeletedResources = append(notDeletedResources, arn.ResourceARN)
 		}
-		return errors.New(fmt.Sprintf("There are undeleted cloud resources '%q'", notDeletedResources))
+		return errors.New(fmt.Sprintf("There are undeleted cloud resources %q", notDeletedResources))
 	}
 	return
 }
 
-func deleteSlbs(slbClient slb.Client, slbArns []ResourceArn) (err error) {
+func (o *ClusterUninstaller) deleteBucket(bucketName string) (err error) {
+	result, err := o.ossClient.ListBuckets(oss.Prefix(bucketName))
+	if err != nil || len(result.Buckets) == 0 {
+		return
+	}
+
+	o.Logger.Debugf("Start to delete buckets %q", bucketName)
+
+	keys := []string{o.TagKey}
+	arns := []string{fmt.Sprintf("arn:acs:oss:%s:*:bucket/%s", o.Region, bucketName)}
+	err = o.unTagResource(&keys, &arns)
+	if err != nil {
+		return err
+	}
+
+	bucket, err := o.ossClient.Bucket(bucketName)
+	if err != nil {
+		return err
+	}
+
+	err = o.deleteObjects(bucket)
+	if err != nil {
+		return err
+	}
+
+	err = o.ossClient.DeleteBucket(bucketName)
+	if err != nil {
+		return err
+	}
+
+	err = wait.Poll(
+		2*time.Second,
+		2*time.Minute,
+		func() (bool, error) {
+			result, err := o.ossClient.ListBuckets(oss.Prefix(bucketName))
+			if err != nil {
+				return false, err
+			}
+			if len(result.Buckets) == 0 {
+				return true, nil
+			}
+			return false, nil
+		},
+	)
+
+	return
+}
+
+func (o *ClusterUninstaller) deleteObjects(bucket *oss.Bucket) (err error) {
+	result, err := bucket.ListObjectsV2()
+	if err != nil {
+		return err
+	}
+	if len(result.Objects) == 0 {
+		return
+	}
+
+	o.Logger.Debugf("Start to delete objects of buckets %s", bucket.BucketName)
+	var keys []string
+
+	for _, object := range result.Objects {
+		keys = append(keys, object.Key)
+	}
+	bucket.DeleteObjects(keys)
+
+	err = wait.Poll(
+		1*time.Second,
+		1*time.Minute,
+		func() (bool, error) {
+			result, err := bucket.ListObjectsV2()
+			if err != nil {
+				return false, err
+			}
+			if len(result.Objects) == 0 {
+				return true, nil
+			}
+			return false, nil
+		},
+	)
+	return
+}
+
+func (o *ClusterUninstaller) deleteSlbs(slbArns []ResourceArn) (err error) {
 	var slbIDs []string
 	for _, slbArn := range slbArns {
 		slbIDs = append(slbIDs, slbArn.ResourceID)
 	}
 
-	for _, vSwitchID := range slbIDs {
-		err = deleteSlb(slbClient, vSwitchID)
+	o.Logger.Debugf("Start to delete SLBs %q", slbIDs)
+	for _, slbID := range slbIDs {
+		err = o.deleteSlb(slbID)
 		if err != nil {
 			return err
 		}
@@ -314,7 +425,7 @@ func deleteSlbs(slbClient slb.Client, slbArns []ResourceArn) (err error) {
 		1*time.Second,
 		1*time.Minute,
 		func() (bool, error) {
-			response, err := listSlb(slbClient, slbIDs)
+			response, err := o.listSlb(slbIDs)
 			if err != nil {
 				return false, err
 			}
@@ -327,27 +438,30 @@ func deleteSlbs(slbClient slb.Client, slbArns []ResourceArn) (err error) {
 	return
 }
 
-func listSlb(slbClient slb.Client, slbIDs []string) (response *slb.DescribeLoadBalancersResponse, err error) {
+func (o *ClusterUninstaller) listSlb(slbIDs []string) (response *slb.DescribeLoadBalancersResponse, err error) {
 	request := slb.CreateDescribeLoadBalancersRequest()
 	request.LoadBalancerId = strings.Join(slbIDs, ",")
-	response, err = slbClient.DescribeLoadBalancers(request)
+	response, err = o.slbClient.DescribeLoadBalancers(request)
 	return
 }
 
-func deleteSlb(slbClient slb.Client, slbID string) (err error) {
+func (o *ClusterUninstaller) deleteSlb(slbID string) (err error) {
+	o.Logger.Debugf("Start to delete SLB %q", slbID)
 	request := slb.CreateDeleteLoadBalancerRequest()
 	request.LoadBalancerId = slbID
-	_, err = slbClient.DeleteLoadBalancer(request)
+	_, err = o.slbClient.DeleteLoadBalancer(request)
 	return
 }
 
-func deleteVSwitchs(vpcClient vpc.Client, vSwitchArns []ResourceArn) (err error) {
+func (o *ClusterUninstaller) deleteVSwitchs(vSwitchArns []ResourceArn) (err error) {
 	var vSwitchIDs []string
 	for _, vSwitchArn := range vSwitchArns {
 		vSwitchIDs = append(vSwitchIDs, vSwitchArn.ResourceID)
 	}
+
+	o.Logger.Debugf("Start to delete VSwitchs %q", vSwitchIDs)
 	for _, vSwitchID := range vSwitchIDs {
-		err = deleteVSwitch(vpcClient, vSwitchID)
+		err = o.deleteVSwitch(vSwitchID)
 		if err != nil {
 			return err
 		}
@@ -357,7 +471,7 @@ func deleteVSwitchs(vpcClient vpc.Client, vSwitchArns []ResourceArn) (err error)
 		1*time.Second,
 		1*time.Minute,
 		func() (bool, error) {
-			response, err := listVSwitch(vpcClient, vSwitchIDs)
+			response, err := o.listVSwitch(vSwitchIDs)
 			if err != nil {
 				return false, err
 			}
@@ -370,27 +484,30 @@ func deleteVSwitchs(vpcClient vpc.Client, vSwitchArns []ResourceArn) (err error)
 	return
 }
 
-func listVSwitch(vpcClient vpc.Client, vSwitchIDs []string) (response *vpc.DescribeVSwitchesResponse, err error) {
+func (o *ClusterUninstaller) listVSwitch(vSwitchIDs []string) (response *vpc.DescribeVSwitchesResponse, err error) {
 	request := vpc.CreateDescribeVSwitchesRequest()
 	request.VSwitchId = strings.Join(vSwitchIDs, ",")
-	response, err = vpcClient.DescribeVSwitches(request)
+	response, err = o.vpcClient.DescribeVSwitches(request)
 	return
 }
 
-func deleteVSwitch(vpcClient vpc.Client, vSwitchID string) (err error) {
+func (o *ClusterUninstaller) deleteVSwitch(vSwitchID string) (err error) {
+	o.Logger.Debugf("Start to delete VSwitch %q", vSwitchID)
 	request := vpc.CreateDeleteVSwitchRequest()
 	request.VSwitchId = vSwitchID
-	_, err = vpcClient.DeleteVSwitch(request)
+	_, err = o.vpcClient.DeleteVSwitch(request)
 	return
 }
 
-func deleteVpcs(vpcClient vpc.Client, vpcArns []ResourceArn) (err error) {
+func (o *ClusterUninstaller) deleteVpcs(vpcArns []ResourceArn) (err error) {
 	var vpcIDs []string
 	for _, vpcArn := range vpcArns {
 		vpcIDs = append(vpcIDs, vpcArn.ResourceID)
 	}
+
+	o.Logger.Debugf("Start to delete VPCs %q", vpcIDs)
 	for _, vpcID := range vpcIDs {
-		err = deleteVpc(vpcClient, vpcID)
+		err = o.deleteVpc(vpcID)
 		if err != nil {
 			return err
 		}
@@ -400,7 +517,7 @@ func deleteVpcs(vpcClient vpc.Client, vpcArns []ResourceArn) (err error) {
 		1*time.Second,
 		1*time.Minute,
 		func() (bool, error) {
-			response, err := listVpc(vpcClient, vpcIDs)
+			response, err := o.listVpc(vpcIDs)
 			if err != nil {
 				return false, err
 			}
@@ -414,28 +531,30 @@ func deleteVpcs(vpcClient vpc.Client, vpcArns []ResourceArn) (err error) {
 	return
 }
 
-func deleteVpc(vpcClient vpc.Client, vpcID string) (err error) {
+func (o *ClusterUninstaller) deleteVpc(vpcID string) (err error) {
+	o.Logger.Debugf("Start to delete VPC %q", vpcID)
 	request := vpc.CreateDeleteVpcRequest()
 	request.VpcId = vpcID
-	_, err = vpcClient.DeleteVpc(request)
+	_, err = o.vpcClient.DeleteVpc(request)
 	return
 }
 
-func listVpc(vpcClient vpc.Client, vpcIDs []string) (response *vpc.DescribeVpcsResponse, err error) {
+func (o *ClusterUninstaller) listVpc(vpcIDs []string) (response *vpc.DescribeVpcsResponse, err error) {
 	request := vpc.CreateDescribeVpcsRequest()
 	request.VpcId = strings.Join(vpcIDs, ",")
-	response, err = vpcClient.DescribeVpcs(request)
+	response, err = o.vpcClient.DescribeVpcs(request)
 	return
 }
 
-func deleteEips(vpcClient vpc.Client, eipArns []ResourceArn) (err error) {
+func (o *ClusterUninstaller) deleteEips(eipArns []ResourceArn) (err error) {
 	var eipIDs []string
 	for _, eipArn := range eipArns {
 		eipIDs = append(eipIDs, eipArn.ResourceID)
 	}
 
+	o.Logger.Debugf("Start to delete EIPs %q", eipIDs)
 	for _, eipID := range eipIDs {
-		err = deleteEip(vpcClient, eipID)
+		err = o.deleteEip(eipID)
 		if err != nil {
 			return err
 		}
@@ -444,7 +563,7 @@ func deleteEips(vpcClient vpc.Client, eipArns []ResourceArn) (err error) {
 		2*time.Second,
 		2*time.Minute,
 		func() (bool, error) {
-			response, err := listEip(vpcClient, eipIDs)
+			response, err := o.listEip(eipIDs)
 			if err != nil {
 				return false, err
 			}
@@ -457,28 +576,31 @@ func deleteEips(vpcClient vpc.Client, eipArns []ResourceArn) (err error) {
 	return err
 }
 
-func listEip(vpcClient vpc.Client, eipIDs []string) (response *vpc.DescribeEipAddressesResponse, err error) {
+func (o *ClusterUninstaller) listEip(eipIDs []string) (response *vpc.DescribeEipAddressesResponse, err error) {
 	request := vpc.CreateDescribeEipAddressesRequest()
 	request.AllocationId = strings.Join(eipIDs, ",")
-	response, err = vpcClient.DescribeEipAddresses(request)
+	response, err = o.vpcClient.DescribeEipAddresses(request)
 	return response, err
 }
 
-func deleteEip(vpcClient vpc.Client, eipID string) (err error) {
+func (o *ClusterUninstaller) deleteEip(eipID string) (err error) {
+	o.Logger.Debugf("Start to delete EIP %q", eipID)
 	request := vpc.CreateReleaseEipAddressRequest()
 	request.AllocationId = eipID
-	_, err = vpcClient.ReleaseEipAddress(request)
+	_, err = o.vpcClient.ReleaseEipAddress(request)
 	return
 }
 
-func deleteNatGatways(vpcClient vpc.Client, natGatwayArns []ResourceArn) (err error) {
+func (o *ClusterUninstaller) deleteNatGatways(natGatwayArns []ResourceArn) (err error) {
 	var natGatwayIDs []string
 	for _, natGatwayArn := range natGatwayArns {
 		natGatwayIDs = append(natGatwayIDs, natGatwayArn.ResourceID)
 	}
 	// TODO: more appropriate to use asynchronous. It is advisable to optimise in the future
+
+	o.Logger.Debugf("Start to delete NAT gatways %q", natGatwayIDs)
 	for _, natGatwayID := range natGatwayIDs {
-		err = deleteNatGatway(vpcClient, natGatwayID)
+		err = o.deleteNatGatway(natGatwayID)
 		if err != nil {
 			return err
 		}
@@ -486,7 +608,7 @@ func deleteNatGatways(vpcClient vpc.Client, natGatwayArns []ResourceArn) (err er
 			3*time.Second,
 			3*time.Minute,
 			func() (bool, error) {
-				response, err := listNatGatways(vpcClient, natGatwayID)
+				response, err := o.listNatGatways(natGatwayID)
 				if err != nil {
 					return false, err
 				}
@@ -503,29 +625,33 @@ func deleteNatGatways(vpcClient vpc.Client, natGatwayArns []ResourceArn) (err er
 	return
 }
 
-func listNatGatways(vpcClient vpc.Client, natGatwayID string) (response *vpc.DescribeNatGatewaysResponse, err error) {
+func (o *ClusterUninstaller) listNatGatways(natGatwayID string) (response *vpc.DescribeNatGatewaysResponse, err error) {
 	request := vpc.CreateDescribeNatGatewaysRequest()
 	request.NatGatewayId = natGatwayID
-	response, err = vpcClient.DescribeNatGateways(request)
+	response, err = o.vpcClient.DescribeNatGateways(request)
 	return
 }
 
-func deleteNatGatway(vpcClient vpc.Client, natGatwayID string) (err error) {
+func (o *ClusterUninstaller) deleteNatGatway(natGatwayID string) (err error) {
+	o.Logger.Debugf("Start to delete NAT gatway %q", natGatwayID)
 	request := vpc.CreateDeleteNatGatewayRequest()
 	request.NatGatewayId = natGatwayID
 	request.Force = "true"
-	_, err = vpcClient.DeleteNatGateway(request)
+	_, err = o.vpcClient.DeleteNatGateway(request)
 	return
 }
 
-func deleteSecurityGroups(ecsClient ecs.Client, securityGroupArns []ResourceArn) (err error) {
+func (o *ClusterUninstaller) deleteSecurityGroups(securityGroupArns []ResourceArn) (err error) {
 	var securityGroupIDs []string
 
 	for _, securityGroupArn := range securityGroupArns {
 		securityGroupIDs = append(securityGroupIDs, securityGroupArn.ResourceID)
 	}
+
+	o.Logger.Debugf("Start to delete security groups %q", securityGroupIDs)
+
 	for _, securityGroupID := range securityGroupIDs {
-		err = deleteSecurityGroupRules(ecsClient, securityGroupID)
+		err = o.deleteSecurityGroupRules(securityGroupID)
 		if err != nil {
 			return err
 		}
@@ -535,7 +661,7 @@ func deleteSecurityGroups(ecsClient ecs.Client, securityGroupArns []ResourceArn)
 		1*time.Second,
 		1*time.Minute,
 		func() (bool, error) {
-			response, err := listSecurityGroupReferences(ecsClient, securityGroupIDs)
+			response, err := o.listSecurityGroupReferences(securityGroupIDs)
 			if err != nil {
 				return false, err
 			}
@@ -550,7 +676,7 @@ func deleteSecurityGroups(ecsClient ecs.Client, securityGroupArns []ResourceArn)
 	}
 
 	for _, securityGroupID := range securityGroupIDs {
-		err = deleteSecurityGroup(ecsClient, securityGroupID)
+		err = o.deleteSecurityGroup(securityGroupID)
 		if err != nil {
 			return err
 		}
@@ -560,7 +686,7 @@ func deleteSecurityGroups(ecsClient ecs.Client, securityGroupArns []ResourceArn)
 		1*time.Second,
 		1*time.Minute,
 		func() (bool, error) {
-			response, err := listSecurityGroup(ecsClient, securityGroupIDs)
+			response, err := o.listSecurityGroup(securityGroupIDs)
 			if err != nil {
 				return false, err
 			}
@@ -574,27 +700,29 @@ func deleteSecurityGroups(ecsClient ecs.Client, securityGroupArns []ResourceArn)
 	return
 }
 
-func deleteSecurityGroup(ecsClient ecs.Client, securityGroupID string) (err error) {
+func (o *ClusterUninstaller) deleteSecurityGroup(securityGroupID string) (err error) {
+	o.Logger.Debugf("Start to delete security group %q", securityGroupID)
 	request := ecs.CreateDeleteSecurityGroupRequest()
 	request.SecurityGroupId = securityGroupID
-	_, err = ecsClient.DeleteSecurityGroup(request)
+	_, err = o.ecsClient.DeleteSecurityGroup(request)
 	return
 }
 
-func deleteSecurityGroupRules(ecsClient ecs.Client, securityGroupID string) (err error) {
-	response, err := getSecurityGroup(ecsClient, securityGroupID)
+func (o *ClusterUninstaller) deleteSecurityGroupRules(securityGroupID string) (err error) {
+	o.Logger.Debugf("Start to delete security group %q rules ", securityGroupID)
+	response, err := o.getSecurityGroup(securityGroupID)
 	if err != nil {
 		return err
 	}
 	for _, permission := range response.Permissions.Permission {
 		if permission.SourceGroupId != "" {
-			err = revokeSecurityGroup(ecsClient, securityGroupID, permission.SourceGroupId, permission.IpProtocol, permission.PortRange, permission.NicType)
+			err = o.revokeSecurityGroup(securityGroupID, permission.SourceGroupId, permission.IpProtocol, permission.PortRange, permission.NicType)
 		}
 	}
 	return
 }
 
-func revokeSecurityGroup(ecsClient ecs.Client, securityGroupID string, sourceGroupID string, ipProtocol string, portRange string, nicType string) (err error) {
+func (o *ClusterUninstaller) revokeSecurityGroup(securityGroupID string, sourceGroupID string, ipProtocol string, portRange string, nicType string) (err error) {
 	request := ecs.CreateRevokeSecurityGroupRequest()
 	request.SecurityGroupId = securityGroupID
 	request.SourceGroupId = sourceGroupID
@@ -602,55 +730,58 @@ func revokeSecurityGroup(ecsClient ecs.Client, securityGroupID string, sourceGro
 	request.PortRange = portRange
 	request.NicType = nicType
 
-	_, err = ecsClient.RevokeSecurityGroup(request)
+	_, err = o.ecsClient.RevokeSecurityGroup(request)
 	return
 }
 
-func getSecurityGroup(ecsClient ecs.Client, securityGroupID string) (response *ecs.DescribeSecurityGroupAttributeResponse, err error) {
+func (o *ClusterUninstaller) getSecurityGroup(securityGroupID string) (response *ecs.DescribeSecurityGroupAttributeResponse, err error) {
 	request := ecs.CreateDescribeSecurityGroupAttributeRequest()
 	request.SecurityGroupId = securityGroupID
-	response, err = ecsClient.DescribeSecurityGroupAttribute(request)
+	response, err = o.ecsClient.DescribeSecurityGroupAttribute(request)
 	return
 }
 
-func listSecurityGroupReferences(ecsClient ecs.Client, securityGroupIDs []string) (response *ecs.DescribeSecurityGroupReferencesResponse, err error) {
+func (o *ClusterUninstaller) listSecurityGroupReferences(securityGroupIDs []string) (response *ecs.DescribeSecurityGroupReferencesResponse, err error) {
 	request := ecs.CreateDescribeSecurityGroupReferencesRequest()
 	request.SecurityGroupId = &securityGroupIDs
-	response, err = ecsClient.DescribeSecurityGroupReferences(request)
+	response, err = o.ecsClient.DescribeSecurityGroupReferences(request)
 	return
 }
 
-func listSecurityGroup(ecsClient ecs.Client, securityGroupIDs []string) (response *ecs.DescribeSecurityGroupsResponse, err error) {
+func (o *ClusterUninstaller) listSecurityGroup(securityGroupIDs []string) (response *ecs.DescribeSecurityGroupsResponse, err error) {
 	request := ecs.CreateDescribeSecurityGroupsRequest()
 	securityGroupIDsString, err := json.Marshal(securityGroupIDs)
 	if err != nil {
 		return nil, err
 	}
 	request.SecurityGroupIds = string(securityGroupIDsString)
-	response, err = ecsClient.DescribeSecurityGroups(request)
+	response, err = o.ecsClient.DescribeSecurityGroups(request)
 	return
 }
 
-func listEcsInstance(ecsClient ecs.Client, instanceIDs []string) (response *ecs.DescribeInstancesResponse, err error) {
+func (o *ClusterUninstaller) listEcsInstance(instanceIDs []string) (response *ecs.DescribeInstancesResponse, err error) {
 	request := ecs.CreateDescribeInstancesRequest()
 	instanceIDsString, err := json.Marshal(instanceIDs)
 	if err != nil {
 		return nil, err
 	}
 	request.InstanceIds = string(instanceIDsString)
-	response, err = ecsClient.DescribeInstances(request)
+	response, err = o.ecsClient.DescribeInstances(request)
 	return
 }
 
-func deleteEcsInstances(ecsClient ecs.Client, instanceArns []ResourceArn) (err error) {
+func (o *ClusterUninstaller) deleteEcsInstances(instanceArns []ResourceArn) (err error) {
 	var instanceIDs []string
 	for _, instanceArn := range instanceArns {
 		instanceIDs = append(instanceIDs, instanceArn.ResourceID)
 	}
+
+	o.Logger.Debugf("Start to delete ECS instances %q", instanceIDs)
+
 	request := ecs.CreateDeleteInstancesRequest()
 	request.InstanceId = &instanceIDs
 	request.Force = "true"
-	_, err = ecsClient.DeleteInstances(request)
+	_, err = o.ecsClient.DeleteInstances(request)
 	if err != nil {
 		return err
 	}
@@ -659,7 +790,7 @@ func deleteEcsInstances(ecsClient ecs.Client, instanceArns []ResourceArn) (err e
 		5*time.Second,
 		5*time.Minute,
 		func() (bool, error) {
-			response, err := listEcsInstance(ecsClient, instanceIDs)
+			response, err := o.listEcsInstance(instanceIDs)
 			if err != nil {
 				return false, err
 			}
@@ -672,58 +803,70 @@ func deleteEcsInstances(ecsClient ecs.Client, instanceArns []ResourceArn) (err e
 	return
 }
 
-func findResourcesByTag(tagClient tag.Client, infraID string) (tagResources []tag.TagResource, err error) {
-	tags := map[string]string{fmt.Sprintf("kubernetes.io/cluster/%q", infraID): "owned"}
+func (o *ClusterUninstaller) findResourcesByTag() (tagResources []tag.TagResource, err error) {
+	tags := map[string]string{o.TagKey: o.TagValue}
 	tagsString, err := json.Marshal(tags)
 	if err != nil {
 		return nil, err
 	}
 
+	o.Logger.Debugf("Retrieving cloud resources by tag %s", tagsString)
+
 	request := tag.CreateListTagResourcesRequest()
 	request.PageSize = "1000"
 	request.Tags = string(tagsString)
 	request.Category = "Custom"
-	response, err := tagClient.ListTagResources(request)
+	response, err := o.tagClient.ListTagResources(request)
 	if err != nil {
 		return nil, err
 	}
 	return response.TagResources, nil
 }
 
-func deleteRAMRoles(ramClient ram.Client, infraID string) (err error) {
-	masterRoleName := fmt.Sprintf("%q-role-master", infraID)
-	workerRoleName := fmt.Sprintf("%q-role-worker", infraID)
+func (o *ClusterUninstaller) unTagResource(keys *[]string, arns *[]string) (err error) {
+	o.Logger.Debugf("Untag cloud resources %q with tags %q", arns, keys)
+	request := tag.CreateUntagResourcesRequest()
+	request.TagKey = keys
+	request.ResourceARN = arns
+	_, err = o.tagClient.UntagResources(request)
+	return
+}
 
-	err = deleteRAMRole(ramClient, masterRoleName)
-	if err != nil && !strings.Contains(err.Error(), "EntityNotExist.Role") {
-		return err
-	}
+func (o *ClusterUninstaller) deleteRAMRoles() (err error) {
+	roles := []string{"bootstrap", "master", "worker"}
 
-	err = deleteRAMRole(ramClient, workerRoleName)
-	if err != nil && !strings.Contains(err.Error(), "EntityNotExist.Role") {
-		return err
+	for _, role := range roles {
+		roleName := fmt.Sprintf("%s-role-%s", o.InfraID, role)
+		policyName := fmt.Sprintf("%s-policy-%s", o.InfraID, role)
+
+		err = o.detachRAMPolicy(policyName)
+		if err != nil {
+			return err
+		}
+		err = o.deletePolicyByName(policyName)
+		if err != nil {
+			return err
+		}
+		err = o.deleteRAMRole(roleName)
+		if err != nil && !strings.Contains(err.Error(), "EntityNotExist.Role") {
+			return err
+		}
 	}
 	return nil
 }
 
-func deleteRAMRole(ramClient ram.Client, roleName string) (err error) {
+func (o *ClusterUninstaller) deleteRAMRole(roleName string) (err error) {
+	o.Logger.Debugf("Start to search and delete RAM role %q", roleName)
 	request := ram.CreateDeleteRoleRequest()
 	request.Scheme = "https"
 	request.RoleName = roleName
-	_, err = ramClient.DeleteRole(request)
+	_, err = o.ramClient.DeleteRole(request)
 	return
 }
 
-func deleteRAMPolicys(ramClient ram.Client, infraID string) (err error) {
-	masterPolicyName := fmt.Sprintf("%q-policy-master", infraID)
-	err = deletePolicy(ramClient, masterPolicyName)
-	if err != nil {
-		return err
-	}
-
-	workerPolicyName := fmt.Sprintf("%q-policy-worker", infraID)
-	err = deletePolicy(ramClient, workerPolicyName)
-	if err != nil {
+func (o *ClusterUninstaller) deletePolicyByName(policyName string) (err error) {
+	err = o.deletePolicy(policyName)
+	if err != nil && !strings.Contains(err.Error(), "EntityNotExist.Policy") {
 		return err
 	}
 
@@ -731,25 +874,7 @@ func deleteRAMPolicys(ramClient ram.Client, infraID string) (err error) {
 		1*time.Second,
 		1*time.Minute,
 		func() (bool, error) {
-			_, err := getPolicy(ramClient, masterPolicyName)
-			if err != nil {
-				if strings.Contains(err.Error(), "EntityNotExist.Policy") {
-					return true, nil
-				}
-				return false, err
-			}
-			return false, nil
-		},
-	)
-	if err != nil {
-		return
-	}
-
-	err = wait.Poll(
-		1*time.Second,
-		1*time.Minute,
-		func() (bool, error) {
-			_, err := getPolicy(ramClient, workerPolicyName)
+			_, err := o.getPolicy(policyName)
 			if err != nil {
 				if strings.Contains(err.Error(), "EntityNotExist.Policy") {
 					return true, nil
@@ -762,25 +887,86 @@ func deleteRAMPolicys(ramClient ram.Client, infraID string) (err error) {
 	return
 }
 
-func getPolicy(ramClient ram.Client, policyName string) (response *ram.GetPolicyResponse, err error) {
+func (o *ClusterUninstaller) getPolicy(policyName string) (response *ram.GetPolicyResponse, err error) {
 	request := ram.CreateGetPolicyRequest()
 	request.Scheme = "https"
 	request.PolicyName = policyName
 	request.PolicyType = "Custom"
-	response, err = ramClient.GetPolicy(request)
+	response, err = o.ramClient.GetPolicy(request)
 	return
 }
 
-func deletePolicy(ramClient ram.Client, policyName string) (err error) {
+func (o *ClusterUninstaller) deletePolicy(policyName string) (err error) {
+	o.Logger.Debugf("Start to search and delete RAM policy %q", policyName)
 	request := ram.CreateDeletePolicyRequest()
 	request.Scheme = "https"
 	request.PolicyName = policyName
-	_, err = ramClient.DeletePolicy(request)
+	_, err = o.ramClient.DeletePolicy(request)
 	return
 }
 
-func deletePrivateZones(pvtzClient pvtz.Client, clusterDomain string) (err error) {
-	zones, err := listPrivateZone(pvtzClient, clusterDomain)
+func (o *ClusterUninstaller) detachRAMPolicy(policyName string) (err error) {
+	o.Logger.Debugf("Start to search RAM policy %q attachments", policyName)
+	attachmentsResponse, err := o.listPolicyAttachments(policyName)
+	if err != nil {
+		return err
+	}
+	if attachmentsResponse.TotalCount == 0 {
+		return nil
+	}
+
+	o.Logger.Debugf("Start to detach RAM policy %q", policyName)
+	for _, a := range attachmentsResponse.PolicyAttachments.PolicyAttachment {
+		err = o.detachPolicy(a.PolicyName, a.PolicyType, a.PrincipalName, a.PrincipalType, a.ResourceGroupId)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = wait.Poll(
+		1*time.Second,
+		1*time.Minute,
+		func() (bool, error) {
+			attachmentsResponse, err = o.listPolicyAttachments(policyName)
+			if err != nil {
+				return false, err
+			}
+			if attachmentsResponse.TotalCount == 0 {
+				return true, nil
+			}
+			return false, nil
+		},
+	)
+	return
+}
+
+func (o *ClusterUninstaller) listPolicyAttachments(policyName string) (response *resourcemanager.ListPolicyAttachmentsResponse, err error) {
+	request := resourcemanager.CreateListPolicyAttachmentsRequest()
+	request.Scheme = "https"
+	request.PolicyName = policyName
+	response, err = o.rmanagerClient.ListPolicyAttachments(request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
+}
+
+func (o *ClusterUninstaller) detachPolicy(policyName string, policyType string, principalName string, principalType string, resourceGroupID string) (err error) {
+	o.Logger.Debugf("Start to detach RAM policy %q with %q", policyName, principalName)
+	request := resourcemanager.CreateDetachPolicyRequest()
+	request.Scheme = "https"
+	request.PolicyName = policyName
+	request.PolicyType = policyType
+	request.PrincipalName = principalName
+	request.PrincipalType = principalType
+	request.ResourceGroupId = resourceGroupID
+	_, err = o.rmanagerClient.DetachPolicy(request)
+	return
+}
+
+func (o *ClusterUninstaller) deletePrivateZones(clusterDomain string) (err error) {
+	o.Logger.Debug("Start to search private zones")
+	zones, err := o.listPrivateZone(clusterDomain)
 	if err != nil {
 		return err
 	}
@@ -788,11 +974,11 @@ func deletePrivateZones(pvtzClient pvtz.Client, clusterDomain string) (err error
 		return nil
 	}
 	if len(zones) > 1 {
-		return errors.Wrap(err, fmt.Sprintf("matched to multiple private zones by clustedomain '%q'", clusterDomain))
+		return errors.Wrap(err, fmt.Sprintf("matched to multiple private zones by clustedomain %q", clusterDomain))
 	}
 
 	zoneID := zones[0].ZoneId
-	err = bindZoneVpc(pvtzClient, zoneID)
+	err = o.bindZoneVpc(zoneID)
 	if err != nil {
 		return err
 	}
@@ -802,7 +988,7 @@ func deletePrivateZones(pvtzClient pvtz.Client, clusterDomain string) (err error
 		1*time.Second,
 		1*time.Minute,
 		func() (bool, error) {
-			zones, err := listPrivateZone(pvtzClient, clusterDomain)
+			zones, err := o.listPrivateZone(clusterDomain)
 			if err != nil {
 				return false, err
 			}
@@ -817,8 +1003,9 @@ func deletePrivateZones(pvtzClient pvtz.Client, clusterDomain string) (err error
 		return
 	}
 
+	o.Logger.Debug("Start to delete private zones")
 	// Delete a private zone does not require delete the record in advance
-	err = deletePrivateZone(pvtzClient, zoneID)
+	err = o.deletePrivateZone(zoneID)
 	if err != nil {
 		return err
 	}
@@ -828,7 +1015,7 @@ func deletePrivateZones(pvtzClient pvtz.Client, clusterDomain string) (err error
 		1*time.Second,
 		1*time.Minute,
 		func() (bool, error) {
-			zones, err := listPrivateZone(pvtzClient, clusterDomain)
+			zones, err := o.listPrivateZone(clusterDomain)
 			if err != nil {
 				return false, err
 			}
@@ -846,35 +1033,37 @@ func deletePrivateZones(pvtzClient pvtz.Client, clusterDomain string) (err error
 	return nil
 }
 
-func deletePrivateZone(pvtzClient pvtz.Client, zoneID string) (err error) {
+func (o *ClusterUninstaller) deletePrivateZone(zoneID string) (err error) {
+	o.Logger.Debugf("Start to delete private zone %q", zoneID)
 	request := pvtz.CreateDeleteZoneRequest()
 	request.ZoneId = zoneID
-	_, err = pvtzClient.DeleteZone(request)
+	_, err = o.pvtzClient.DeleteZone(request)
 	return
 }
 
-func bindZoneVpc(pvtzClient pvtz.Client, zoneID string) (err error) {
+func (o *ClusterUninstaller) bindZoneVpc(zoneID string) (err error) {
+	o.Logger.Debugf("Start to unbind/bind private zone %q with vpc", zoneID)
 	request := pvtz.CreateBindZoneVpcRequest()
 	request.ZoneId = zoneID
-	_, err = pvtzClient.BindZoneVpc(request)
+	_, err = o.pvtzClient.BindZoneVpc(request)
 	return
 }
 
-func listPrivateZone(pvtzClient pvtz.Client, clusterDomain string) ([]pvtz.Zone, error) {
+func (o *ClusterUninstaller) listPrivateZone(clusterDomain string) ([]pvtz.Zone, error) {
 	request := pvtz.CreateDescribeZonesRequest()
 	request.Lang = "en"
 	request.Keyword = clusterDomain
 
-	response, err := pvtzClient.DescribeZones(request)
+	response, err := o.pvtzClient.DescribeZones(request)
 	if err != nil {
 		return nil, err
 	}
 	return response.Zones.Zone, nil
 }
 
-func deleteDNSRecords(dnsClient alidns.Client, clusterDomain string) (err error) {
-	baseDomain := strings.Join(strings.Split(clusterDomain, ".")[1:], ".")
-	domains, err := listDomain(dnsClient, baseDomain)
+func (o *ClusterUninstaller) deleteDNSRecords(baseDomain string) (err error) {
+	o.Logger.Debug("Start to search DNS records")
+	domains, err := o.listDomain(baseDomain)
 	if err != nil {
 		return
 	}
@@ -882,7 +1071,7 @@ func deleteDNSRecords(dnsClient alidns.Client, clusterDomain string) (err error)
 		return
 	}
 
-	records, err := listRecord(dnsClient, baseDomain)
+	records, err := o.listRecord(baseDomain)
 	if err != nil {
 		return
 	}
@@ -890,9 +1079,12 @@ func deleteDNSRecords(dnsClient alidns.Client, clusterDomain string) (err error)
 		return
 	}
 
+	o.Logger.Debug("Start to delete DNS records")
 	for _, record := range records {
-		err = deleteRecord(dnsClient, record.RecordId)
+		err = o.deleteRecord(record.RecordId)
 		if err != nil {
+			err = errors.Wrap(err, fmt.Sprintf("DNS record %q", record.RecordId))
+			o.Logger.Info(err)
 			return
 		}
 	}
@@ -902,7 +1094,7 @@ func deleteDNSRecords(dnsClient alidns.Client, clusterDomain string) (err error)
 		1*time.Second,
 		1*time.Minute,
 		func() (bool, error) {
-			records, err := listRecord(dnsClient, baseDomain)
+			records, err := o.listRecord(baseDomain)
 			if err != nil {
 				return false, err
 			}
@@ -920,33 +1112,34 @@ func deleteDNSRecords(dnsClient alidns.Client, clusterDomain string) (err error)
 	return nil
 }
 
-func deleteRecord(dnsclient alidns.Client, recordID string) error {
+func (o *ClusterUninstaller) deleteRecord(recordID string) error {
+	o.Logger.Debugf("Start to delete DNS record %q", recordID)
 	request := alidns.CreateDeleteDomainRecordRequest()
 	request.Scheme = "https"
 	request.RecordId = recordID
-	_, err := dnsclient.DeleteDomainRecord(request)
+	_, err := o.dnsClient.DeleteDomainRecord(request)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func listDomain(dnsclient alidns.Client, baseDomain string) ([]alidns.DomainInDescribeDomains, error) {
+func (o *ClusterUninstaller) listDomain(baseDomain string) ([]alidns.DomainInDescribeDomains, error) {
 	request := alidns.CreateDescribeDomainsRequest()
 	request.Scheme = "https"
 	request.KeyWord = baseDomain
-	response, err := dnsclient.DescribeDomains(request)
+	response, err := o.dnsClient.DescribeDomains(request)
 	if err != nil {
 		return nil, err
 	}
 	return response.Domains.Domain, nil
 }
 
-func listRecord(dnsclient alidns.Client, baseDomain string) ([]alidns.Record, error) {
+func (o *ClusterUninstaller) listRecord(baseDomain string) ([]alidns.Record, error) {
 	request := alidns.CreateDescribeDomainRecordsRequest()
 	request.Scheme = "https"
 	request.DomainName = baseDomain
-	response, err := dnsclient.DescribeDomainRecords(request)
+	response, err := o.dnsClient.DescribeDomainRecords(request)
 	if err != nil {
 		return nil, err
 	}
