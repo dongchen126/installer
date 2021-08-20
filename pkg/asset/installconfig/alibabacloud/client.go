@@ -15,6 +15,7 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/endpoints"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/responses"
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/alidns"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/pvtz"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/resourcemanager"
@@ -203,6 +204,17 @@ func (client *Client) ListPrivateZoneRegions() (response *pvtz.DescribeRegionsRe
 	request := pvtz.CreateDescribeRegionsRequest()
 	request.AcceptLanguage = defaultAcceptLanguage
 	response = &pvtz.DescribeRegionsResponse{
+		BaseResponse: &responses.BaseResponse{},
+	}
+	err = client.doActionWithSetDomain(request, response)
+	return
+}
+
+// ListDNSDomain get the list of domains.
+func (client *Client) ListDNSDomain(baseDomain string) (response *alidns.DescribeDomainsResponse, err error) {
+	request := alidns.CreateDescribeDomainsRequest()
+	request.KeyWord = baseDomain
+	response = &alidns.DescribeDomainsResponse{
 		BaseResponse: &responses.BaseResponse{},
 	}
 	err = client.doActionWithSetDomain(request, response)

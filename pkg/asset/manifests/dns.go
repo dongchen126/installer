@@ -89,32 +89,28 @@ func (d *DNS) Generate(dependencies asset.Parents) error {
 			return errors.Wrap(err, "failed to get AlibabaCloud Cloud client")
 		}
 
-		privatezones, err := client.ListPrivateZones(installConfig.Config.BaseDomain)
-		if err != nil || len(privatezones.Zones.Zone) == 0 {
-			return errors.Wrap(err, "failed to get DNS zone ID")
-		}
-
-		zoneName := ""
-		zoneID := ""
-		for _, zone := range privatezones.Zones.Zone {
-			if zone.ZoneName == installConfig.Config.BaseDomain {
-				zoneName = zone.ZoneName
-				zoneID = zone.ZoneId
-				break
-			}
-		}
-		if zoneName == "" {
-			return errors.Wrap(err, "failed to get DNS zone ID")
-		}
-
 		if installConfig.Config.Publish == types.ExternalPublishingStrategy {
-			config.Spec.PublicZone = &configv1.DNSZone{
-				ID: zoneID,
+			domains, err := client.ListDNSDomain(installConfig.Config.BaseDomain)
+			if err != nil {
+				return errors.Wrap(err, "failed to get domains")
 			}
+			if domains.TotalCount == 0 {
+				return errors.New("failed to get domains")
+			}
+			domainName := ""
+			for _, domain := range domains.Domains.Domain {
+				if domain.DomainName == installConfig.Config.BaseDomain {
+					domainName = domain.DomainName
+					break
+				}
+			}
+			if domainName == "" {
+				return errors.New("failed to get domains")
+			}
+			config.Spec.PublicZone = &configv1.DNSZone{ID: domains.Domains.Domain[0].DomainId}
 		}
-		config.Spec.PrivateZone = &configv1.DNSZone{
-			ID: zoneID,
-		}
+		// On Alibaba Cloud can be fetched using `ID` as a pre-determined privat zone name,
+		config.Spec.PrivateZone = &configv1.DNSZone{ID: installConfig.Config.ClusterDomain()}
 	case awstypes.Name:
 		if installConfig.Config.Publish == types.ExternalPublishingStrategy {
 			sess, err := installConfig.AWS.Session(context.TODO())
