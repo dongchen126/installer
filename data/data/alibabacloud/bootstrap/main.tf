@@ -99,6 +99,12 @@ resource "alicloud_security_group" "sg_bootstrap" {
   name              = "${local.prefix}_sg_bootstrap"
   description       = local.description
   vpc_id            = var.vpc_id
+  tags = merge(
+    {
+      "Name" = "${local.prefix}-sg-bootstrap"
+    },
+    local.tags,
+  )
 }
 
 resource "alicloud_security_group_rule" "sg_rule_ssh" {
