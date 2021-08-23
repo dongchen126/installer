@@ -11,6 +11,7 @@ resource "alicloud_instance" "master" {
   count             = length(var.vswitch_ids)
   resource_group_id = var.resource_group_id
 
+  host_name                  = "${local.prefix}-master${count.index}"
   instance_name              = "${local.prefix}_master_${count.index}"
   instance_type              = var.instance_type
   image_id                   = var.image_id

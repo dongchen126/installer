@@ -132,6 +132,7 @@ resource "alicloud_security_group_rule" "sg_rule_journald_gateway" {
 resource "alicloud_instance" "bootstrap" {
   resource_group_id = var.ali_resource_group_id
 
+  host_name                  = "${local.prefix}-bootstrap"
   instance_name              = "${local.prefix}_bootstrap"
   instance_type              = var.ali_bootstrap_instance_type
   image_id                   = var.ali_image_id
