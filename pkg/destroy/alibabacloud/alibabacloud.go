@@ -461,7 +461,20 @@ func (o *ClusterUninstaller) deleteVSwitchs(vSwitchArns []ResourceArn) (err erro
 
 	o.Logger.Debugf("Start to delete VSwitchs %q", vSwitchIDs)
 	for _, vSwitchID := range vSwitchIDs {
-		err = o.deleteVSwitch(vSwitchID)
+		err = wait.Poll(
+			5*time.Second,
+			30*time.Second,
+			func() (bool, error) {
+				err = o.deleteVSwitch(vSwitchID)
+				if err == nil {
+					return true, nil
+				}
+				if strings.Contains(err.Error(), "DependencyViolation") {
+					return false, nil
+				}
+				return false, err
+			},
+		)
 		if err != nil {
 			return err
 		}
@@ -507,7 +520,20 @@ func (o *ClusterUninstaller) deleteVpcs(vpcArns []ResourceArn) (err error) {
 
 	o.Logger.Debugf("Start to delete VPCs %q", vpcIDs)
 	for _, vpcID := range vpcIDs {
-		err = o.deleteVpc(vpcID)
+		err = wait.Poll(
+			5*time.Second,
+			30*time.Second,
+			func() (bool, error) {
+				err = o.deleteVpc(vpcID)
+				if err == nil {
+					return true, nil
+				}
+				if strings.Contains(err.Error(), "DependencyViolation") {
+					return false, nil
+				}
+				return false, err
+			},
+		)
 		if err != nil {
 			return err
 		}
@@ -676,7 +702,20 @@ func (o *ClusterUninstaller) deleteSecurityGroups(securityGroupArns []ResourceAr
 	}
 
 	for _, securityGroupID := range securityGroupIDs {
-		err = o.deleteSecurityGroup(securityGroupID)
+		err = wait.Poll(
+			5*time.Second,
+			30*time.Second,
+			func() (bool, error) {
+				err = o.deleteSecurityGroup(securityGroupID)
+				if err == nil {
+					return true, nil
+				}
+				if strings.Contains(err.Error(), "DependencyViolation") {
+					return false, nil
+				}
+				return false, err
+			},
+		)
 		if err != nil {
 			return err
 		}
