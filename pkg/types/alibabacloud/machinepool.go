@@ -53,6 +53,9 @@ func (a *MachinePool) Set(required *MachinePool) {
 	if required.SystemDiskCategory != "" {
 		a.SystemDiskCategory = required.SystemDiskCategory
 	}
+	if required.ImageID != "" {
+		a.ImageID = required.ImageID
+	}
 }
 
 // DefaultDiskCategory holds the default Alibaba Cloud disk type used by the ECS.
