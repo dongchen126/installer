@@ -175,11 +175,12 @@ func (client *Client) DescribeAvailableResource(destinationResource string) (res
 }
 
 // DescribeAvailableInstanceType query available instance type of ECS.
-func (client *Client) DescribeAvailableInstanceType(instanceType string, zoneID string) (response *ecs.DescribeAvailableResourceResponse, err error) {
+func (client *Client) DescribeAvailableInstanceType(zoneID string, instanceType string) (response *ecs.DescribeAvailableResourceResponse, err error) {
 	request := ecs.CreateDescribeAvailableResourceRequest()
 	request.RegionId = client.RegionID
 	request.ZoneId = zoneID
 	request.DestinationResource = "InstanceType"
+	request.InstanceType = instanceType
 	response = &ecs.DescribeAvailableResourceResponse{
 		BaseResponse: &responses.BaseResponse{},
 	}
