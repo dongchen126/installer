@@ -19,6 +19,7 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/pvtz"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/resourcemanager"
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/vpc"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/pkg/errors"
 )
@@ -168,6 +169,17 @@ func (client *Client) DescribeAvailableResource(destinationResource string) (res
 	request.RegionId = client.RegionID
 	request.DestinationResource = destinationResource
 	response = &ecs.DescribeAvailableResourceResponse{
+		BaseResponse: &responses.BaseResponse{},
+	}
+	err = client.doActionWithSetDomain(request, response)
+	return
+}
+
+// ListEnhanhcedNatGatewayAvailableZones query available zone for enhanhced NAT gateway.
+func (client *Client) ListEnhanhcedNatGatewayAvailableZones() (response *vpc.ListEnhanhcedNatGatewayAvailableZonesResponse, err error) {
+	request := vpc.CreateListEnhanhcedNatGatewayAvailableZonesRequest()
+	request.RegionId = client.RegionID
+	response = &vpc.ListEnhanhcedNatGatewayAvailableZonesResponse{
 		BaseResponse: &responses.BaseResponse{},
 	}
 	err = client.doActionWithSetDomain(request, response)

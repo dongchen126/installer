@@ -16,13 +16,14 @@ provider "alicloud" {
 }
 
 module "vpc" {
-  source            = "./vpc"
-  cluster_id        = var.cluster_id
-  region_id         = var.ali_region_id
-  zone_ids          = var.ali_zone_ids
-  resource_group_id = var.ali_resource_group_id
-  vpc_cidr_block    = var.machine_v4_cidrs[0]
-  tags              = local.tags
+  source             = "./vpc"
+  cluster_id         = var.cluster_id
+  region_id          = var.ali_region_id
+  zone_ids           = var.ali_zone_ids
+  nat_gatway_zone_id = var.ali_nat_gatway_zone_id
+  resource_group_id  = var.ali_resource_group_id
+  vpc_cidr_block     = var.machine_v4_cidrs[0]
+  tags               = local.tags
 }
 
 module "pvtz" {

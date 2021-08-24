@@ -729,11 +729,18 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 			workerConfigs[i] = w.Spec.Template.Spec.ProviderSpec.Value.Object.(*alibabacloudprovider.AlibabaCloudMachineProviderConfig)
 		}
 
+		natGatwayZones, err := client.ListEnhanhcedNatGatewayAvailableZones()
+		if err != nil {
+			return err
+		}
+		natGatwayZoneID := natGatwayZones.Zones[0].ZoneId
+
 		data, err := alibabacloudtfvars.TFVars(
 			alibabacloudtfvars.TFVarsSources{
 				Auth:                  auth,
 				ResourceGroupID:       installConfig.Config.AlibabaCloud.ResourceGroupID,
 				BaseDomain:            installConfig.Config.BaseDomain,
+				NatGatwayZoneID:       natGatwayZoneID,
 				MasterConfigs:         masterConfigs,
 				WorkerConfigs:         workerConfigs,
 				IgnitionBucket:        bucket,

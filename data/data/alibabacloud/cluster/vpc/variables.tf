@@ -11,6 +11,11 @@ variable "zone_ids" {
   description = "The availability zones in which to create the masters."
 }
 
+variable "nat_gatway_zone_id" {
+  type        = string
+  description = "The availability zone in which to create the NAT gatway."
+}
+
 variable "vpc_cidr_block" {
   type = string
 }

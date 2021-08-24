@@ -2,7 +2,7 @@
 locals {
   description = "Created By OpenShift Installer"
   prefix      = var.cluster_id
-  newbits     = tonumber(split("/", var.vpc_cidr_block)[1]) < 16 ? 19 - tonumber(split("/", var.vpc_cidr_block)[1]) : 3
+  newbits     = tonumber(split("/", var.vpc_cidr_block)[1]) < 16 ? 20 - tonumber(split("/", var.vpc_cidr_block)[1]) : 4
 }
 
 resource "alicloud_vpc" "vpc" {
@@ -29,6 +29,20 @@ resource "alicloud_vswitch" "vswitchs" {
   tags = merge(
     {
       "Name" = "${local.prefix}-vswitch"
+    },
+    var.tags,
+  )
+}
+
+resource "alicloud_vswitch" "vswitch_nat_gatway" {
+  vswitch_name = "${local.prefix}-vswitch-nat-gatway"
+  description  = local.description
+  vpc_id       = alicloud_vpc.vpc.id
+  cidr_block   = cidrsubnet(var.vpc_cidr_block, local.newbits, local.newbits)
+  zone_id      = var.nat_gatway_zone_id
+  tags = merge(
+    {
+      "Name" = "${local.prefix}-vswitch-nat-gatway"
     },
     var.tags,
   )

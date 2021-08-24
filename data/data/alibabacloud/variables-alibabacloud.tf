@@ -16,6 +16,11 @@ variable "ali_zone_ids" {
   description = "The availability zones in which to create the masters."
 }
 
+variable "ali_nat_gatway_zone_id" {
+  type        = string
+  description = "The availability zone in which to create the NAT gatway."
+}
+
 variable "ali_resource_group_id" {
   type = string
 }
