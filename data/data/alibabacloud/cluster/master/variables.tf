@@ -21,12 +21,8 @@ variable "sg_id" {
   description = "The security group ID of the master ECS."
 }
 
-variable "slb_external_id" {
-  type = string
-}
-
-variable "slb_internal_id" {
-  type = string
+variable "slb_ids" {
+  type = list(string)
 }
 
 variable "instance_type" {

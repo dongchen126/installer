@@ -53,8 +53,7 @@ module "master" {
   vpc_id               = module.vpc.vpc_id
   vswitch_ids          = module.vpc.vswitch_ids
   sg_id                = module.vpc.sg_master_id
-  slb_external_id      = module.vpc.slb_external_id
-  slb_internal_id      = module.vpc.slb_internal_id
+  slb_ids              = module.vpc.slb_ids
   instance_type        = var.ali_master_instance_type
   image_id             = var.ali_image_id
   system_disk_size     = var.ali_system_disk_size

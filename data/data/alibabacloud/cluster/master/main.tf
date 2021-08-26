@@ -36,14 +36,11 @@ resource "alicloud_instance" "master" {
   )
 }
 
-resource "alicloud_slb_attachment" "internal_slb_attachment_master" {
-  load_balancer_id = var.slb_internal_id
-  instance_ids     = alicloud_instance.master.*.id
-  weight           = 90
-}
-
-resource "alicloud_slb_attachment" "external_slb_attachment_master" {
-  load_balancer_id = var.slb_external_id
-  instance_ids     = alicloud_instance.master.*.id
-  weight           = 90
+resource "alicloud_slb_backend_server" "slb_attachment_masters" {
+  count            = "${length(var.slb_ids) * length(alicloud_instance.master.*.id)}"
+  load_balancer_id = "${element(var.slb_ids, ceil(count.index / length(alicloud_instance.master.*.id)))}"
+  backend_servers {
+    server_id = "${element(alicloud_instance.master.*.id, count.index)}"
+    weight    = 90
+  }
 }

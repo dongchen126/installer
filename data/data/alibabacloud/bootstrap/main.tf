@@ -156,8 +156,12 @@ resource "alicloud_instance" "bootstrap" {
   )
 }
 
-resource "alicloud_slb_attachment" "slb_attachment_bootstrap" {
-  load_balancer_id = var.slb_external_id
-  instance_ids     = [alicloud_instance.bootstrap.id]
-  weight           = 90
+resource "alicloud_slb_backend_server" "slb_attachment_bootstraps" {
+  count = length(var.slb_ids)
+
+  load_balancer_id = var.slb_ids[count.index]
+  backend_servers {
+    server_id = alicloud_instance.bootstrap.id
+    weight    = 90
+  }
 }

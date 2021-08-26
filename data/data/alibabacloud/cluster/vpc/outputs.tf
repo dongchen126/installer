@@ -18,16 +18,12 @@ output "eip_ip" {
   value = alicloud_eip_address.eip.ip_address
 }
 
-output "slb_external_id" {
-  value = alicloud_slb_load_balancer.slb_external.id
+output "slb_ids" {
+  value = [alicloud_slb_load_balancer.slb_external.id, alicloud_slb_load_balancer.slb_internal.id]
 }
 
 output "slb_external_ip" {
   value = alicloud_slb_load_balancer.slb_external.address
-}
-
-output "slb_internal_id" {
-  value = alicloud_slb_load_balancer.slb_internal.id
 }
 
 output "slb_internal_ip" {
