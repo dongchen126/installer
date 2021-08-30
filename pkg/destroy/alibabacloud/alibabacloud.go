@@ -313,10 +313,29 @@ func (o *ClusterUninstaller) checkOthers(resourceArns []ResourceArn) (err error)
 		return nil
 	}
 
-	tagResources, err := o.findResourcesByTag()
+	var isSuccessful bool
+	err = wait.Poll(
+		2*time.Second,
+		30*time.Second,
+		func() (bool, error) {
+			tagResources, err := o.findResourcesByTag()
+			if err != nil {
+				return false, err
+			}
+			if len(tagResources) == 0 {
+				isSuccessful = true
+				return true, nil
+			}
+			return false, nil
+		},
+	)
 
-	if len(tagResources) > 0 {
+	if !isSuccessful {
 		notDeletedResources := []string{}
+		tagResources, err := o.findResourcesByTag()
+		if err != nil {
+			return err
+		}
 		for _, arn := range tagResources {
 			notDeletedResources = append(notDeletedResources, arn.ResourceARN)
 		}
