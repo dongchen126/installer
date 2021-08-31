@@ -19,7 +19,7 @@ type config struct {
 	Auth                  `json:",inline"`
 	Region                string                     `json:"ali_region_id"`
 	ZoneIDs               []string                   `json:"ali_zone_ids"`
-	NatGatwayZoneID       string                     `json:"ali_nat_gatway_zone_id"`
+	NatGatewayZoneID      string                     `json:"ali_nat_gateway_zone_id"`
 	ResourceGroupID       string                     `json:"ali_resource_group_id"`
 	BootstrapInstanceType string                     `json:"ali_bootstrap_instance_type"`
 	MasterInstanceType    string                     `json:"ali_master_instance_type"`
@@ -37,7 +37,7 @@ type TFVarsSources struct {
 	Auth                  Auth
 	ResourceGroupID       string
 	BaseDomain            string
-	NatGatwayZoneID       string
+	NatGatewayZoneID      string
 	MasterConfigs         []*alibabacloudprovider.AlibabaCloudMachineProviderConfig
 	WorkerConfigs         []*alibabacloudprovider.AlibabaCloudMachineProviderConfig
 	IgnitionBucket        string
@@ -64,7 +64,7 @@ func TFVars(sources TFVarsSources) ([]byte, error) {
 		Auth:                  sources.Auth,
 		Region:                masterConfig.RegionID,
 		ZoneIDs:               zoneIDs,
-		NatGatwayZoneID:       sources.NatGatwayZoneID,
+		NatGatewayZoneID:      sources.NatGatewayZoneID,
 		ResourceGroupID:       sources.ResourceGroupID,
 		BootstrapInstanceType: masterConfig.InstanceType,
 		MasterInstanceType:    masterConfig.InstanceType,

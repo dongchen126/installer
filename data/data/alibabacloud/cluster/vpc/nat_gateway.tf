@@ -3,7 +3,7 @@ resource "alicloud_nat_gateway" "nat_gateway" {
   vpc_id           = alicloud_vpc.vpc.id
   specification    = "Small"
   nat_gateway_name = "${local.prefix}-ngw"
-  vswitch_id       = alicloud_vswitch.vswitch_nat_gatway.id
+  vswitch_id       = alicloud_vswitch.vswitch_nat_gateway.id
   nat_type         = "Enhanced"
   description      = local.description
   tags = merge(

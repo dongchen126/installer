@@ -211,7 +211,7 @@ func (o *ClusterUninstaller) deleteResourceByArn(resourceArns []ResourceArn) (er
 	var deletedVSwitchs []ResourceArn
 	var deletedEips []ResourceArn
 	var deletedSecurityGroups []ResourceArn
-	var deletedNatGatways []ResourceArn
+	var deletedNatGateways []ResourceArn
 	var deletedSlbs []ResourceArn
 	var others []ResourceArn
 
@@ -235,7 +235,7 @@ func (o *ClusterUninstaller) deleteResourceByArn(resourceArns []ResourceArn) (er
 			case "eip":
 				deletedEips = append(deletedEips, resourceArn)
 			case "natgateway":
-				deletedNatGatways = append(deletedNatGatways, resourceArn)
+				deletedNatGateways = append(deletedNatGateways, resourceArn)
 			default:
 				others = append(others, resourceArn)
 			}
@@ -265,8 +265,8 @@ func (o *ClusterUninstaller) deleteResourceByArn(resourceArns []ResourceArn) (er
 		}
 	}
 
-	if len(deletedNatGatways) > 0 {
-		err = o.deleteNatGatways(deletedNatGatways)
+	if len(deletedNatGateways) > 0 {
+		err = o.deleteNatGateways(deletedNatGateways)
 		if err != nil {
 			return err
 		}
@@ -636,16 +636,16 @@ func (o *ClusterUninstaller) deleteEip(eipID string) (err error) {
 	return
 }
 
-func (o *ClusterUninstaller) deleteNatGatways(natGatwayArns []ResourceArn) (err error) {
-	var natGatwayIDs []string
-	for _, natGatwayArn := range natGatwayArns {
-		natGatwayIDs = append(natGatwayIDs, natGatwayArn.ResourceID)
+func (o *ClusterUninstaller) deleteNatGateways(natGatewayArns []ResourceArn) (err error) {
+	var natGatewayIDs []string
+	for _, natGatewayArn := range natGatewayArns {
+		natGatewayIDs = append(natGatewayIDs, natGatewayArn.ResourceID)
 	}
 	// TODO: more appropriate to use asynchronous. It is advisable to optimise in the future
 
-	o.Logger.Debugf("Start to delete NAT gatways %q", natGatwayIDs)
-	for _, natGatwayID := range natGatwayIDs {
-		err = o.deleteNatGatway(natGatwayID)
+	o.Logger.Debugf("Start to delete NAT gateways %q", natGatewayIDs)
+	for _, natGatewayID := range natGatewayIDs {
+		err = o.deleteNatGateway(natGatewayID)
 		if err != nil {
 			return err
 		}
@@ -653,7 +653,7 @@ func (o *ClusterUninstaller) deleteNatGatways(natGatwayArns []ResourceArn) (err 
 			3*time.Second,
 			3*time.Minute,
 			func() (bool, error) {
-				response, err := o.listNatGatways(natGatwayID)
+				response, err := o.listNatGateways(natGatewayID)
 				if err != nil {
 					return false, err
 				}
@@ -670,17 +670,17 @@ func (o *ClusterUninstaller) deleteNatGatways(natGatwayArns []ResourceArn) (err 
 	return
 }
 
-func (o *ClusterUninstaller) listNatGatways(natGatwayID string) (response *vpc.DescribeNatGatewaysResponse, err error) {
+func (o *ClusterUninstaller) listNatGateways(natGatewayID string) (response *vpc.DescribeNatGatewaysResponse, err error) {
 	request := vpc.CreateDescribeNatGatewaysRequest()
-	request.NatGatewayId = natGatwayID
+	request.NatGatewayId = natGatewayID
 	response, err = o.vpcClient.DescribeNatGateways(request)
 	return
 }
 
-func (o *ClusterUninstaller) deleteNatGatway(natGatwayID string) (err error) {
-	o.Logger.Debugf("Start to delete NAT gatway %q", natGatwayID)
+func (o *ClusterUninstaller) deleteNatGateway(natGatewayID string) (err error) {
+	o.Logger.Debugf("Start to delete NAT gateway %q", natGatewayID)
 	request := vpc.CreateDeleteNatGatewayRequest()
-	request.NatGatewayId = natGatwayID
+	request.NatGatewayId = natGatewayID
 	request.Force = "true"
 	_, err = o.vpcClient.DeleteNatGateway(request)
 	return

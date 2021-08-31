@@ -34,15 +34,15 @@ resource "alicloud_vswitch" "vswitchs" {
   )
 }
 
-resource "alicloud_vswitch" "vswitch_nat_gatway" {
-  vswitch_name = "${local.prefix}-vswitch-nat-gatway"
+resource "alicloud_vswitch" "vswitch_nat_gateway" {
+  vswitch_name = "${local.prefix}-vswitch-nat-gateway"
   description  = local.description
   vpc_id       = alicloud_vpc.vpc.id
   cidr_block   = cidrsubnet(var.vpc_cidr_block, local.newbits, local.newbits)
-  zone_id      = var.nat_gatway_zone_id
+  zone_id      = var.nat_gateway_zone_id
   tags = merge(
     {
-      "Name" = "${local.prefix}-vswitch-nat-gatway"
+      "Name" = "${local.prefix}-vswitch-nat-gateway"
     },
     var.tags,
   )
