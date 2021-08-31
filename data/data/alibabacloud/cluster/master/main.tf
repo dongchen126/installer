@@ -27,7 +27,6 @@ resource "alicloud_instance" "master" {
   system_disk_size        = var.system_disk_size
 
   user_data = base64encode(var.user_data_ign)
-  key_name  = var.key_name
   tags = merge(
     {
       "Name" = "${local.prefix}-master-${count.index}"

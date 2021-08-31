@@ -51,11 +51,6 @@ variable "ali_system_disk_category" {
   default     = "cloud_essd"
 }
 
-variable "ali_key_name" {
-  type        = string
-  description = "The name of the key pair that can login ECS instance successfully without password."
-}
-
 variable "ali_resource_tags" {
   type = map(string)
 

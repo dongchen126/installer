@@ -147,7 +147,6 @@ resource "alicloud_instance" "bootstrap" {
   system_disk_size        = local.system_disk_size
 
   user_data = var.ali_bootstrap_stub_ignition
-  key_name  = var.ali_key_name
   tags = merge(
     {
       "Name" = "${local.prefix}-bootstrap"

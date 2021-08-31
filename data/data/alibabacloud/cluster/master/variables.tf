@@ -46,11 +46,6 @@ variable "system_disk_category" {
   default     = "cloud_essd"
 }
 
-variable "key_name" {
-  type        = string
-  description = "The name of the key pair that can login ECS instance successfully without password."
-}
-
 variable "role_name" {
   type        = string
   description = "Instance RAM role name. The name is provided and maintained by RAM."

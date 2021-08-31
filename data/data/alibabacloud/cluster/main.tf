@@ -59,7 +59,6 @@ module "master" {
   system_disk_size     = var.ali_system_disk_size
   system_disk_category = var.ali_system_disk_category
   user_data_ign        = var.ignition_master
-  key_name             = var.ali_key_name
   role_name            = module.ram.role_master_name
   tags                 = local.tags
 }

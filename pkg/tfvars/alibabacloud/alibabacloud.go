@@ -26,7 +26,6 @@ type config struct {
 	ImageID               string                     `json:"ali_image_id"`
 	SystemDiskSize        int                        `json:"ali_system_disk_size"`
 	SystemDiskCategory    string                     `json:"ali_system_disk_category"`
-	KeyName               string                     `json:"ali_key_name"`
 	Tags                  []alibabacloudprovider.Tag `json:"tag,omitempty"`
 	IgnitionBucket        string                     `json:"ali_ignition_bucket"`
 	BootstrapIgnitionStub string                     `json:"ali_bootstrap_stub_ignition"`
@@ -53,7 +52,7 @@ type TFVarsSources struct {
 // TFVars generates AlibabaCloud-specific Terraform variables launching the cluster.
 func TFVars(sources TFVarsSources) ([]byte, error) {
 	masterConfig := sources.MasterConfigs[0]
-	workerConfig := sources.WorkerConfigs[0]
+	// workerConfig := sources.WorkerConfigs[0]
 
 	zoneIDs := make([]string, len(sources.MasterConfigs))
 	for i, c := range sources.MasterConfigs {
@@ -71,7 +70,6 @@ func TFVars(sources TFVarsSources) ([]byte, error) {
 		ImageID:               masterConfig.ImageID,
 		SystemDiskSize:        masterConfig.SystemDiskSize,
 		SystemDiskCategory:    masterConfig.SystemDiskCategory,
-		KeyName:               workerConfig.KeyPairName,
 		Tags:                  masterConfig.Tags,
 		IgnitionBucket:        sources.IgnitionBucket,
 	}
