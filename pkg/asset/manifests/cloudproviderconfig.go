@@ -2,6 +2,7 @@ package manifests
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -105,11 +106,11 @@ func (cpc *CloudProviderConfig) Generate(dependencies asset.Parents) error {
 		if err != nil {
 			return err
 		}
-		// TODO: AlibabaCloud: Add 'VpcID','ZoneID','VswitchID'
+
 		alibabacloudConfig, err := alibabacloudmanifests.CloudConfig{
 			Global: alibabacloudmanifests.GlobalConfig{
-				AccessKeyID:     client.AccessKeyID,
-				AccessKeySecret: client.AccessKeySecret,
+				AccessKeyID:     base64.StdEncoding.EncodeToString([]byte(client.AccessKeyID)),
+				AccessKeySecret: base64.StdEncoding.EncodeToString([]byte(client.AccessKeySecret)),
 				ClusterID:       clusterID.InfraID,
 				Region:          client.RegionID,
 			},
