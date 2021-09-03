@@ -13,10 +13,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // Machines returns a list of machines for a machinepool.
-func Machines(clusterID string, config *types.InstallConfig, pool *types.MachinePool, role, userDataSecret string) ([]machineapi.Machine, error) {
+func Machines(clusterID string, config *types.InstallConfig, pool *types.MachinePool, role, userDataSecret string, resourceTags map[string]string) ([]machineapi.Machine, error) {
 	if configPlatform := config.Platform.Name(); configPlatform != alibabacloud.Name {
 		return nil, fmt.Errorf("non-AlibabaCloud configuration: %q", configPlatform)
 	}
@@ -35,7 +36,7 @@ func Machines(clusterID string, config *types.InstallConfig, pool *types.Machine
 	var machines []machineapi.Machine
 	for idx := int64(0); idx < total; idx++ {
 		azIndex := int(idx) % len(azs)
-		provider, err := provider(clusterID, platform, mpool, azIndex, role, userDataSecret)
+		provider, err := provider(clusterID, platform, mpool, azIndex, role, userDataSecret, resourceTags)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create provider")
 		}
@@ -71,6 +72,7 @@ func provider(clusterID string,
 	azIdx int,
 	role string,
 	userDataSecret string,
+	resourceTags map[string]string,
 ) (*alibabacloudprovider.AlibabaCloudMachineProviderConfig, error) {
 	az := mpool.Zones[azIdx]
 
@@ -79,6 +81,11 @@ func provider(clusterID string,
 		resourceGroup = platform.ResourceGroupID
 	} else {
 		return nil, errors.Errorf("Parameter 'ResourceGroup' is empty")
+	}
+
+	tags, err := tagsFromResourceTags(clusterID, resourceTags)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create alibabacloudprovider.Tag from Tags")
 	}
 
 	return &alibabacloudprovider.AlibabaCloudMachineProviderConfig{
@@ -95,5 +102,24 @@ func provider(clusterID string,
 		ZoneID:             az,
 		UserDataSecret:     &corev1.LocalObjectReference{Name: userDataSecret},
 		CredentialsSecret:  &corev1.LocalObjectReference{Name: "alibabacloud-credentials"},
+		Tags:               tags,
 	}, nil
+}
+
+func tagsFromResourceTags(clusterID string, resourceTags map[string]string) ([]alibabacloudprovider.Tag, error) {
+	tags := []alibabacloudprovider.Tag{
+		{Key: fmt.Sprintf("kubernetes.io/cluster/%s", clusterID), Value: "owned"},
+		{Key: "OCP", Value: "ISV Integration"},
+	}
+	forbiddenTags := sets.NewString()
+	for idx := range tags {
+		forbiddenTags.Insert(tags[idx].Key)
+	}
+	for k, v := range resourceTags {
+		if forbiddenTags.Has(k) {
+			return nil, fmt.Errorf("user tags may not clobber %s", k)
+		}
+		tags = append(tags, alibabacloudprovider.Tag{Key: k, Value: v})
+	}
+	return tags, nil
 }

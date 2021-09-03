@@ -15,6 +15,11 @@ type Platform struct {
 	// cluster should be installed.
 	ResourceGroupID string `json:"resourceGroupID"`
 
+	// Tags additional keys and values that the installer will add
+	// as tags to all resources that it creates. Resources created by the
+	// cluster itself may not include these tags.
+	Tags map[string]string `json:"tags"`
+
 	// DefaultMachinePlatform is the default configuration used when installing
 	// on Alibaba Cloud for machine pools which do not define their own platform
 	// configuration.
