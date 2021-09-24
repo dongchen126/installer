@@ -133,7 +133,7 @@ resource "alicloud_instance" "bootstrap" {
   resource_group_id = var.ali_resource_group_id
 
   host_name                  = "${local.prefix}-bootstrap"
-  instance_name              = "${local.prefix}_bootstrap"
+  instance_name              = "${local.prefix}-bootstrap"
   instance_type              = var.ali_bootstrap_instance_type
   image_id                   = var.ali_image_id
   vswitch_id                 = var.vswitch_ids[0]
