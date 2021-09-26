@@ -150,12 +150,20 @@ func (i *Infrastructure) Generate(dependencies asset.Parents) error {
 			config.Status.PlatformStatus.Azure.ARMEndpoint = installConfig.Config.Platform.Azure.ARMEndpoint
 		}
 	case alibabacloud.Name:
-		// TODO AlibabaCloud: support AlibabaCloudPlatformType,AlibabaCloudPlatformStatus
-		config.Spec.PlatformSpec.Type = "AlibabaCloud"
-		// config.Status.PlatformStatus.AlibabaCloud = &configv1.AlibabaCloudPlatformStatus{
-		// 	Location:          installConfig.Config.Platform.AlibabaCloud.Region,
-		// 	ResourceGroupName: installConfig.Config.Platform.AlibabaCloud.ClusterResourceGroupName(clusterID.InfraID),
-		// }
+		var tags []configv1.AlibabaCloudResourceTag
+		if len(installConfig.Config.AlibabaCloud.Tags) > 0 {
+			tags = make([]configv1.AlibabaCloudResourceTag, 0, len(installConfig.Config.AlibabaCloud.Tags))
+			for k, v := range installConfig.Config.AlibabaCloud.Tags {
+				tags = append(tags, configv1.AlibabaCloudResourceTag{Key: k, Value: v})
+			}
+		}
+
+		config.Spec.PlatformSpec.Type = configv1.AlibabaCloudPlatformType
+		config.Status.PlatformStatus.AlibabaCloud = &configv1.AlibabaCloudPlatformStatus{
+			Region:          installConfig.Config.Platform.AlibabaCloud.Region,
+			ResourceGroupID: installConfig.Config.Platform.AlibabaCloud.ResourceGroupID,
+			ResourceTags:    tags,
+		}
 	case baremetal.Name:
 		config.Spec.PlatformSpec.Type = configv1.BareMetalPlatformType
 		config.Status.PlatformStatus.BareMetal = &configv1.BareMetalPlatformStatus{

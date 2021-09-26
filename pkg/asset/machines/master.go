@@ -179,7 +179,7 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 			mpool.Zones = azs
 		}
 		pool.Platform.AlibabaCloud = &mpool
-		machines, err = alibabacloud.Machines(clusterID.InfraID, ic, &pool, "master", "master-user-data")
+		machines, err = alibabacloud.Machines(clusterID.InfraID, ic, &pool, "master", "master-user-data", installConfig.Config.Platform.AlibabaCloud.Tags)
 		if err != nil {
 			return errors.Wrap(err, "failed to create master machine objects")
 		}

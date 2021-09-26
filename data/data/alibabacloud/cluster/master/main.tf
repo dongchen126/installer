@@ -12,7 +12,7 @@ resource "alicloud_instance" "master" {
   resource_group_id = var.resource_group_id
 
   host_name                  = "${local.prefix}-master${count.index}"
-  instance_name              = "${local.prefix}_master_${count.index}"
+  instance_name              = "${local.prefix}-master${count.index}"
   instance_type              = var.instance_type
   image_id                   = var.image_id
   internet_max_bandwidth_out = 0
@@ -21,7 +21,7 @@ resource "alicloud_instance" "master" {
   security_groups = [var.sg_id]
   role_name       = var.role_name
 
-  system_disk_name        = "${local.prefix}_sys_disk-master_${count.index}"
+  system_disk_name        = "${local.prefix}_sys_disk-master${count.index}"
   system_disk_description = local.description
   system_disk_category    = var.system_disk_category
   system_disk_size        = var.system_disk_size
@@ -29,7 +29,7 @@ resource "alicloud_instance" "master" {
   user_data = base64encode(var.user_data_ign)
   tags = merge(
     {
-      "Name" = "${local.prefix}-master-${count.index}"
+      "Name" = "${local.prefix}-master${count.index}"
     },
     var.tags,
   )

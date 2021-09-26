@@ -260,7 +260,7 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 				mpool.Zones = azs
 			}
 			pool.Platform.AlibabaCloud = &mpool
-			sets, err := alibabacloud.MachineSets(clusterID.InfraID, ic, &pool, "worker", "worker-user-data")
+			sets, err := alibabacloud.MachineSets(clusterID.InfraID, ic, &pool, "worker", "worker-user-data", installConfig.Config.Platform.AlibabaCloud.Tags)
 			if err != nil {
 				return errors.Wrap(err, "failed to create worker machine objects")
 			}
