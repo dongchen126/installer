@@ -7,10 +7,12 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/openshift/installer/pkg/asset"
+	alibabacloudconfig "github.com/openshift/installer/pkg/asset/installconfig/alibabacloud"
 	gcpconfig "github.com/openshift/installer/pkg/asset/installconfig/gcp"
 	ibmcloudconfig "github.com/openshift/installer/pkg/asset/installconfig/ibmcloud"
 	openstackconfig "github.com/openshift/installer/pkg/asset/installconfig/openstack"
 	ovirtconfig "github.com/openshift/installer/pkg/asset/installconfig/ovirt"
+	"github.com/openshift/installer/pkg/types/alibabacloud"
 	"github.com/openshift/installer/pkg/types/aws"
 	"github.com/openshift/installer/pkg/types/azure"
 	"github.com/openshift/installer/pkg/types/baremetal"
@@ -46,6 +48,11 @@ func (a *PlatformCredsCheck) Generate(dependencies asset.Parents) error {
 	var err error
 	platform := ic.Config.Platform.Name()
 	switch platform {
+	case alibabacloud.Name:
+		_, err = alibabacloudconfig.NewClient(ic.Config.Platform.AlibabaCloud.Region)
+		if err != nil {
+			return errors.Wrap(err, "creating AlibabaCloud Cloud session")
+		}
 	case aws.Name:
 		_, err := ic.AWS.Session(ctx)
 		if err != nil {
