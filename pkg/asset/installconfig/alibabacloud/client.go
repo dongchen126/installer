@@ -26,9 +26,7 @@ import (
 
 // Environment virables
 const (
-	envAccessKeyID     = "ALIBABA_CLOUD_ACCESS_KEY_ID"
-	envAccessKeySecret = "ALIBABA_CLOUD_ACCESS_KEY_SECRET"
-	envCredentialFile  = "ALIBABA_CLOUD_CREDENTIALS_FILE"
+	envCredentialFile = "ALIBABA_CLOUD_CREDENTIALS_FILE"
 )
 
 // Credential configuration file template.
@@ -273,9 +271,6 @@ func defaultEndpoint() map[string]string {
 }
 
 func storeCredentials(accessKeyID string, accessKeySecret string) (err error) {
-	os.Setenv(envAccessKeyID, accessKeyID)
-	os.Setenv(envAccessKeySecret, accessKeySecret)
-
 	dirPath, ok := os.LookupEnv(envCredentialFile)
 	if !ok || dirPath == "" {
 		user, err := user.Current()
