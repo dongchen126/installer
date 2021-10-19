@@ -43,9 +43,6 @@ type TFVarsSources struct {
 	WorkerConfigs         []*alibabacloudprovider.AlibabaCloudMachineProviderConfig
 	IgnitionBucket        string
 	IgnitionPresignedURL  string
-	IgnitionFile          string
-	ImageID               string
-	SSHKey                string
 	Publish               types.PublishingStrategy
 	AdditionalTrustBundle string
 	Architecture          types.Architecture
