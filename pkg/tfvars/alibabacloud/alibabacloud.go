@@ -18,18 +18,18 @@ type Auth struct {
 
 type config struct {
 	Auth                  `json:",inline"`
-	Region                string                     `json:"ali_region_id"`
-	ZoneIDs               []string                   `json:"ali_zone_ids"`
-	NatGatewayZoneID      string                     `json:"ali_nat_gateway_zone_id"`
-	ResourceGroupID       string                     `json:"ali_resource_group_id"`
-	BootstrapInstanceType string                     `json:"ali_bootstrap_instance_type"`
-	MasterInstanceType    string                     `json:"ali_master_instance_type"`
-	ImageID               string                     `json:"ali_image_id"`
-	SystemDiskSize        int                        `json:"ali_system_disk_size"`
-	SystemDiskCategory    string                     `json:"ali_system_disk_category"`
-	Tags                  []alibabacloudprovider.Tag `json:"tag,omitempty"`
-	IgnitionBucket        string                     `json:"ali_ignition_bucket"`
-	BootstrapIgnitionStub string                     `json:"ali_bootstrap_stub_ignition"`
+	Region                string            `json:"ali_region_id"`
+	ZoneIDs               []string          `json:"ali_zone_ids"`
+	NatGatewayZoneID      string            `json:"ali_nat_gateway_zone_id"`
+	ResourceGroupID       string            `json:"ali_resource_group_id"`
+	BootstrapInstanceType string            `json:"ali_bootstrap_instance_type"`
+	MasterInstanceType    string            `json:"ali_master_instance_type"`
+	ImageID               string            `json:"ali_image_id"`
+	SystemDiskSize        int               `json:"ali_system_disk_size"`
+	SystemDiskCategory    string            `json:"ali_system_disk_category"`
+	ExtraTags             map[string]string `json:"ali_extra_tags,omitempty"`
+	IgnitionBucket        string            `json:"ali_ignition_bucket"`
+	BootstrapIgnitionStub string            `json:"ali_bootstrap_stub_ignition"`
 }
 
 // TFVarsSources contains the parameters to be converted into Terraform variables
@@ -56,6 +56,11 @@ func TFVars(sources TFVarsSources) ([]byte, error) {
 		zoneIDs[i] = c.ZoneID
 	}
 
+	tags := make(map[string]string, len(masterConfig.Tags))
+	for _, tag := range masterConfig.Tags {
+		tags[tag.Key] = tag.Value
+	}
+
 	cfg := &config{
 		Auth:                  sources.Auth,
 		Region:                masterConfig.RegionID,
@@ -67,7 +72,7 @@ func TFVars(sources TFVarsSources) ([]byte, error) {
 		ImageID:               masterConfig.ImageID,
 		SystemDiskSize:        masterConfig.SystemDiskSize,
 		SystemDiskCategory:    masterConfig.SystemDiskCategory,
-		Tags:                  masterConfig.Tags,
+		ExtraTags:             tags,
 		IgnitionBucket:        sources.IgnitionBucket,
 	}
 

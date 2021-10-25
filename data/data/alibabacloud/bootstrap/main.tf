@@ -6,7 +6,7 @@ locals {
       "OCP"                                     = "ISV Integration",
       "kubernetes.io/cluster/${var.cluster_id}" = "owned"
     },
-    var.ali_resource_tags,
+    var.ali_extra_tags,
   )
   system_disk_size     = 120
   system_disk_category = "cloud_essd"

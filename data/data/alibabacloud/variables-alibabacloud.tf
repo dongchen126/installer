@@ -51,7 +51,7 @@ variable "ali_system_disk_category" {
   default     = "cloud_essd"
 }
 
-variable "ali_resource_tags" {
+variable "ali_extra_tags" {
   type = map(string)
 
   description = <<EOF
