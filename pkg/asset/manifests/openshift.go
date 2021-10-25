@@ -14,7 +14,6 @@ import (
 
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
-	"github.com/openshift/installer/pkg/asset/installconfig/alibabacloud"
 	installconfigaws "github.com/openshift/installer/pkg/asset/installconfig/aws"
 	"github.com/openshift/installer/pkg/asset/installconfig/gcp"
 	"github.com/openshift/installer/pkg/asset/installconfig/ibmcloud"
@@ -27,7 +26,6 @@ import (
 	"github.com/openshift/installer/pkg/asset/rhcos"
 	"github.com/openshift/installer/pkg/asset/templates/content/openshift"
 	"github.com/openshift/installer/pkg/types"
-	alibabacloudtypes "github.com/openshift/installer/pkg/types/alibabacloud"
 	awstypes "github.com/openshift/installer/pkg/types/aws"
 	azuretypes "github.com/openshift/installer/pkg/types/azure"
 	baremetaltypes "github.com/openshift/installer/pkg/types/baremetal"
@@ -105,17 +103,6 @@ func (o *Openshift) Generate(dependencies asset.Parents) error {
 			AWS: &AwsCredsSecretData{
 				Base64encodeAccessKeyID:     base64.StdEncoding.EncodeToString([]byte(creds.AccessKeyID)),
 				Base64encodeSecretAccessKey: base64.StdEncoding.EncodeToString([]byte(creds.SecretAccessKey)),
-			},
-		}
-	case alibabacloudtypes.Name:
-		client, err := alibabacloud.NewClient(installConfig.Config.AlibabaCloud.Region)
-		if err != nil {
-			return err
-		}
-		cloudCreds = cloudCredsSecretData{
-			AlibabaCloud: &AlibabaCloudCredsSecretData{
-				Base64encodeAccessKeyID:     base64.StdEncoding.EncodeToString([]byte(client.AccessKeyID)),
-				Base64encodeSecretAccessKey: base64.StdEncoding.EncodeToString([]byte(client.AccessKeySecret)),
 			},
 		}
 	case azuretypes.Name:
