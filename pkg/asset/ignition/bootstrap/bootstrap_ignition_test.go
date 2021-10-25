@@ -1,4 +1,4 @@
-package ignition
+package bootstrap
 
 import (
 	"fmt"

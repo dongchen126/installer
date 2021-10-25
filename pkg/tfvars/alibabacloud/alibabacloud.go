@@ -5,10 +5,9 @@ import (
 	"fmt"
 
 	alibabacloudprovider "github.com/AliyunContainerService/cluster-api-provider-alibabacloud/pkg/apis/alibabacloudprovider/v1beta1"
-	"github.com/pkg/errors"
-
-	"github.com/openshift/installer/pkg/asset/ignition"
+	"github.com/openshift/installer/pkg/asset/ignition/bootstrap"
 	"github.com/openshift/installer/pkg/types"
+	"github.com/pkg/errors"
 )
 
 // Auth is the collection of credentials that will be used by terrform.
@@ -72,7 +71,7 @@ func TFVars(sources TFVarsSources) ([]byte, error) {
 		IgnitionBucket:        sources.IgnitionBucket,
 	}
 
-	stubIgn, err := ignition.GenerateIgnitionShim(sources.IgnitionPresignedURL, sources.AdditionalTrustBundle)
+	stubIgn, err := bootstrap.GenerateIgnitionShimWithCertBundle(sources.IgnitionPresignedURL, sources.AdditionalTrustBundle)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create stub Ignition config for bootstrap")
 	}
