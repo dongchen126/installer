@@ -13,3 +13,7 @@ output "slb_ids" {
 output "sg_master_id" {
   value = module.vpc.sg_master_id
 }
+
+output "control_plane_ips" {
+  value = values(module.master.master_ecs_private_ips)
+}
