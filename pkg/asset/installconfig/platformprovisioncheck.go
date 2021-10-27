@@ -107,7 +107,7 @@ func (a *PlatformProvisionCheck) Generate(dependencies asset.Parents) error {
 			return err
 		}
 	case alibabacloud.Name:
-		client, err := alibabacloudconfig.NewClient(ic.Config.AlibabaCloud.Region)
+		client, err := ic.AlibabaCloud.Client()
 		if err != nil {
 			return err
 		}
