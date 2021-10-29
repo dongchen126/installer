@@ -645,7 +645,7 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 		object := "bootstrap.ign"
 		signURL, err := client.GetOSSObjectSignURL(bucket, object)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to get a presigned URL for OSS object %s", object)
 		}
 
 		auth := alibabacloudtfvars.Auth{
@@ -655,7 +655,7 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 
 		masters, err := mastersAsset.Machines()
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to get master machine info")
 		}
 		masterConfigs := make([]*alibabacloudprovider.AlibabaCloudMachineProviderConfig, len(masters))
 		for i, m := range masters {
@@ -663,7 +663,7 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 		}
 		workers, err := workersAsset.MachineSets()
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to get worker machine info")
 		}
 		workerConfigs := make([]*alibabacloudprovider.AlibabaCloudMachineProviderConfig, len(workers))
 		for i, w := range workers {
@@ -672,7 +672,7 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 
 		natGatewayZones, err := client.ListEnhanhcedNatGatewayAvailableZones()
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to list avaliabel zones for NAT gateway")
 		}
 		natGatewayZoneID := natGatewayZones.Zones[0].ZoneId
 
