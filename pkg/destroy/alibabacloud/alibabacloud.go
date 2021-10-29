@@ -401,6 +401,14 @@ func (o *ClusterUninstaller) deleteSlbs() (err error) {
 
 	o.Logger.Debugf("Start to delete SLBs %q", slbIDs)
 	for _, slbID := range slbIDs {
+		err = o.setSlbModificationProtection(slbID)
+		if err != nil {
+			return err
+		}
+		err = o.setSlbDeleteProtection(slbID)
+		if err != nil {
+			return err
+		}
 		err = o.deleteSlb(slbID)
 		if err != nil {
 			return err
@@ -428,6 +436,22 @@ func (o *ClusterUninstaller) listSlb(slbIDs []string) (response *slb.DescribeLoa
 	request := slb.CreateDescribeLoadBalancersRequest()
 	request.LoadBalancerId = strings.Join(slbIDs, ",")
 	response, err = o.slbClient.DescribeLoadBalancers(request)
+	return
+}
+
+func (o *ClusterUninstaller) setSlbModificationProtection(slbID string) (err error) {
+	request := slb.CreateSetLoadBalancerModificationProtectionRequest()
+	request.LoadBalancerId = slbID
+	request.ModificationProtectionStatus = "NonProtection"
+	_, err = o.slbClient.SetLoadBalancerModificationProtection(request)
+	return
+}
+
+func (o *ClusterUninstaller) setSlbDeleteProtection(slbID string) (err error) {
+	request := slb.CreateSetLoadBalancerDeleteProtectionRequest()
+	request.LoadBalancerId = slbID
+	request.DeleteProtection = "off"
+	_, err = o.slbClient.SetLoadBalancerDeleteProtection(request)
 	return
 }
 
@@ -813,6 +837,30 @@ func (o *ClusterUninstaller) listEcsInstance(instanceIDs []string) (response *ec
 	return
 }
 
+func (o *ClusterUninstaller) modifyDeletionProtection(instanceID string) (err error) {
+	request := ecs.CreateModifyInstanceAttributeRequest()
+	request.InstanceId = instanceID
+	request.DeletionProtection = "false"
+	_, err = o.ecsClient.ModifyInstanceAttribute(request)
+	return
+}
+
+func (o *ClusterUninstaller) modifyECSInstancesDeletionProtection(instanceIDs []string) (err error) {
+	response, err := o.listEcsInstance(instanceIDs)
+	if err != nil {
+		return err
+	}
+	for _, instance := range response.Instances.Instance {
+		if instance.DeletionProtection {
+			err := o.modifyDeletionProtection(instance.InstanceId)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return
+}
+
 func (o *ClusterUninstaller) deleteEcsInstances() (err error) {
 	if len(o.TagResources.ecsInstances) <= 0 {
 		return nil
@@ -821,6 +869,12 @@ func (o *ClusterUninstaller) deleteEcsInstances() (err error) {
 	var instanceIDs []string
 	for _, instanceArn := range o.TagResources.ecsInstances {
 		instanceIDs = append(instanceIDs, instanceArn.ResourceID)
+	}
+
+	o.Logger.Debugf("Start to check and turn off ECS instances %q deletion protection", instanceIDs)
+	err = o.modifyECSInstancesDeletionProtection(instanceIDs)
+	if err != nil {
+		return err
 	}
 
 	o.Logger.Debugf("Start to delete ECS instances %q", instanceIDs)
