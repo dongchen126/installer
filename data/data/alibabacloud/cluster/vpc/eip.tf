@@ -3,7 +3,7 @@ resource "alicloud_eip_address" "eip" {
   address_name         = "${local.prefix}-eip"
   bandwidth            = "10"
   internet_charge_type = "PayByBandwidth"
-  resource_group_id    = var.resource_group_id
+  resource_group_id    = local.resource_group_id
   tags = merge(
     {
       "Name" = "${local.prefix}-eip"

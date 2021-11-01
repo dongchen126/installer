@@ -23,6 +23,7 @@ variable "ali_nat_gateway_zone_id" {
 
 variable "ali_resource_group_id" {
   type = string
+  default = ""
 }
 
 variable "ali_bootstrap_instance_type" {

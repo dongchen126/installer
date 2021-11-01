@@ -35,14 +35,12 @@ type ClusterUninstaller struct {
 	AccessKeySecret string
 	Auth            auth.Credential
 
-	Region          string
-	InfraID         string
-	ClusterID       string
-	ClusterDomain   string
-	ResourceGroupID string
-	TagKey          string
-	TagValue        string
-	TagResources    struct {
+	Region        string
+	InfraID       string
+	ClusterDomain string
+	TagKey        string
+	TagValue      string
+	TagResources  struct {
 		ecsInstances   []ResourceArn
 		securityGroups []ResourceArn
 		vpcs           []ResourceArn
@@ -146,7 +144,6 @@ func New(logger logrus.FieldLogger, metadata *types.ClusterMetadata) (providers.
 		AccessKeySecret: client.AccessKeySecret,
 		Region:          region,
 		InfraID:         metadata.InfraID,
-		ClusterID:       metadata.ClusterID,
 		ClusterDomain:   metadata.AlibabaCloud.ClusterDomain,
 		TagKey:          fmt.Sprintf("kubernetes.io/cluster/%s", metadata.InfraID),
 		TagValue:        "owned",
@@ -200,6 +197,9 @@ func (o *ClusterUninstaller) destroyCluster() error {
 		},
 		{
 			{name: "VPCs", execute: o.deleteVpcs},
+		},
+		{
+			{name: "resource groups", execute: o.deleteResourceGroup},
 		},
 	}
 
@@ -346,6 +346,63 @@ func (o *ClusterUninstaller) waitComplete() (err error) {
 		}
 		return errors.New(fmt.Sprintf("There are undeleted cloud resources %q", notDeletedResources))
 	}
+	return
+}
+
+func (o *ClusterUninstaller) deleteResourceGroup() (err error) {
+	resourceGroupDisplayName := fmt.Sprintf("%s-rg", o.InfraID)
+	response, err := o.listResourceGroups()
+	if err != nil {
+		return err
+	}
+
+	resourceGroupID := ""
+	for _, resourceGroup := range response.ResourceGroups.ResourceGroup {
+		if resourceGroup.DisplayName == resourceGroupDisplayName {
+			resourceGroupID = resourceGroup.Id
+		}
+	}
+
+	if resourceGroupID == "" {
+		return
+	}
+
+	o.Logger.Debugf("Start to delete resource group %q", resourceGroupID)
+	err = o.deleteResourceGroupByID(resourceGroupID)
+	if err != nil {
+		return err
+	}
+
+	err = wait.Poll(
+		2*time.Second,
+		1*time.Minute,
+		func() (bool, error) {
+			response, err := o.listResourceGroups()
+			if err != nil {
+				return false, err
+			}
+			for _, resourceGroup := range response.ResourceGroups.ResourceGroup {
+				if resourceGroup.DisplayName == resourceGroupDisplayName {
+					return false, nil
+				}
+			}
+			return true, nil
+		},
+	)
+
+	return
+}
+
+func (o *ClusterUninstaller) deleteResourceGroupByID(resourceGroupID string) (err error) {
+	resquest := resourcemanager.CreateDeleteResourceGroupRequest()
+	resquest.ResourceGroupId = resourceGroupID
+	_, err = o.rmanagerClient.DeleteResourceGroup(resquest)
+	return
+}
+
+func (o *ClusterUninstaller) listResourceGroups() (response *resourcemanager.ListResourceGroupsResponse, err error) {
+	request := resourcemanager.CreateListResourceGroupsRequest()
+	response, err = o.rmanagerClient.ListResourceGroups(request)
 	return
 }
 

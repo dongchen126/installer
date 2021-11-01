@@ -15,6 +15,8 @@ import (
 const (
 	defaultRegion         = "cn-hangzhou"
 	defaultAcceptLanguage = "en-US"
+
+	createNew = "<create new>"
 )
 
 // Platform collects AlibabaCloud-specific configuration.
@@ -104,7 +106,6 @@ func selectResourceGroup(client *Client) (string, error) {
 	}
 
 	groups := groupsResponse.ResourceGroups.ResourceGroup
-
 	if len(groups) == 0 {
 		return "", errors.Wrap(err, "resource group not found")
 	}
@@ -118,6 +119,8 @@ func selectResourceGroup(client *Client) (string, error) {
 		options = append(options, option)
 	}
 	sort.Strings(options)
+	options = append(options, createNew)
+	names[createNew] = ""
 
 	var selectedResourceGroup string
 	err = survey.Ask([]*survey.Question{
@@ -126,6 +129,7 @@ func selectResourceGroup(client *Client) (string, error) {
 				Message: "Resource Group",
 				Help:    "The resource group where the cluster will be provisioned.",
 				Options: options,
+				Default: createNew,
 			},
 		},
 	}, &selectedResourceGroup)

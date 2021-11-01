@@ -1,3 +1,6 @@
+output "resource_group_id" {
+  value = module.vpc.resource_group_id
+}
 output "vpc_id" {
   value = module.vpc.vpc_id
 }

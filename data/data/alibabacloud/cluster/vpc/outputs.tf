@@ -37,3 +37,7 @@ output "sg_master_id" {
 output "sg_worker_id" {
   value = alicloud_security_group.sg_worker.id
 }
+
+output "resource_group_id" {
+  value = local.resource_group_id
+}

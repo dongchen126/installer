@@ -1,6 +1,6 @@
 
 resource "alicloud_slb_load_balancer" "slb_external" {
-  resource_group_id  = var.resource_group_id
+  resource_group_id  = local.resource_group_id
   load_balancer_name = "${local.prefix}-slb-external"
   address_type       = "internet"
   load_balancer_spec = "slb.s2.small"

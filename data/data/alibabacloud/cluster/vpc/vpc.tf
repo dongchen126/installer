@@ -3,10 +3,11 @@ locals {
   description = "Created By OpenShift Installer"
   prefix      = var.cluster_id
   newbits     = tonumber(split("/", var.vpc_cidr_block)[1]) < 16 ? 20 - tonumber(split("/", var.vpc_cidr_block)[1]) : 4
+  resource_group_id = var.ali_resource_group_id == "" ? alicloud_resource_manager_resource_group.resource_group.0.id : var.ali_resource_group_id
 }
 
 resource "alicloud_vpc" "vpc" {
-  resource_group_id = var.resource_group_id
+  resource_group_id = local.resource_group_id
   vpc_name          = "${local.prefix}-vpc"
   cidr_block        = var.vpc_cidr_block
   description       = local.description
