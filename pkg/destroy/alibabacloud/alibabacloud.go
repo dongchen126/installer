@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk"
@@ -152,43 +153,9 @@ func New(logger logrus.FieldLogger, metadata *types.ClusterMetadata) (providers.
 	}, nil
 }
 
-func (o *ClusterUninstaller) executeDeleteFunction(execute func() error, resourceName string) (err error) {
-	err = wait.PollImmediateInfinite(
-		time.Second*10,
-		func() (bool, error) {
-			ferr := execute()
-			if ferr != nil {
-				o.Logger.Debugf("failed to delete %s: %v", resourceName, ferr)
-				return false, nil
-			}
-			return true, nil
-		},
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // Run is the entrypoint to start the uninstall process.
 func (o *ClusterUninstaller) Run() (*types.ClusterQuota, error) {
 	var err error
-	deletedFuncs := []struct {
-		resourceName string
-		executeFunc  func() error
-	}{
-		{resourceName: "DNS records", executeFunc: o.deleteDNSRecords},
-		{resourceName: "OSS buckets", executeFunc: o.deleteBucket},
-		{resourceName: "private zones", executeFunc: o.deletePrivateZones},
-		{resourceName: "RAM roles", executeFunc: o.deleteRAMRoles},
-		{resourceName: "ECS instances", executeFunc: o.deleteEcsInstances},
-		{resourceName: "ECS security groups", executeFunc: o.deleteSecurityGroups},
-		{resourceName: "Nat gateways", executeFunc: o.deleteNatGateways},
-		{resourceName: "EIPs", executeFunc: o.deleteEips},
-		{resourceName: "SLBs", executeFunc: o.deleteSlbs},
-		{resourceName: "VSwitchs", executeFunc: o.deleteVSwitchs},
-		{resourceName: "VPCs", executeFunc: o.deleteVpcs},
-	}
 
 	err = o.configureClients()
 	if err != nil {
@@ -200,20 +167,96 @@ func (o *ClusterUninstaller) Run() (*types.ClusterQuota, error) {
 		return nil, err
 	}
 
-	// TODO: more appropriate to use asynchronous. It is advisable to optimise in the future
-	for _, execute := range deletedFuncs {
-		err = o.executeDeleteFunction(execute.executeFunc, execute.resourceName)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	err = o.waitComplete()
+	err = o.destroyCluster()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to destroy cluster")
 	}
 
 	return nil, nil
+}
+
+func (o *ClusterUninstaller) destroyCluster() error {
+	stagedFuncs := [][]struct {
+		name    string
+		execute func() error
+	}{
+		{
+			{name: "DNS records", execute: o.deleteDNSRecords},
+			{name: "OSS buckets", execute: o.deleteBucket},
+			{name: "RAM roles", execute: o.deleteRAMRoles},
+			{name: "ECS instances", execute: o.deleteEcsInstances},
+		},
+		{
+			{name: "private zones", execute: o.deletePrivateZones},
+			{name: "ECS security groups", execute: o.deleteSecurityGroups},
+			{name: "Nat gateways", execute: o.deleteNatGateways},
+			{name: "SLBs", execute: o.deleteSlbs},
+		},
+		{
+			{name: "EIPs", execute: o.deleteEips},
+		},
+		{
+			{name: "VSwitchs", execute: o.deleteVSwitchs},
+		},
+		{
+			{name: "VPCs", execute: o.deleteVpcs},
+		},
+	}
+
+	for _, stage := range stagedFuncs {
+		var wg sync.WaitGroup
+		errCh := make(chan error)
+		wgDone := make(chan bool)
+
+		for _, f := range stage {
+			wg.Add(1)
+			go o.executeStageFunction(f, errCh, &wg)
+		}
+
+		go func() {
+			wg.Wait()
+			close(wgDone)
+		}()
+
+		select {
+		case <-wgDone:
+			// On to the next stage
+			continue
+		case err := <-errCh:
+			return err
+		}
+	}
+
+	err := o.waitComplete()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (o *ClusterUninstaller) executeStageFunction(f struct {
+	name    string
+	execute func() error
+}, errCh chan error, wg *sync.WaitGroup) error {
+	defer wg.Done()
+
+	err := wait.PollImmediateInfinite(
+		time.Second*10,
+		func() (bool, error) {
+			ferr := f.execute()
+			if ferr != nil {
+				o.Logger.Debugf("%s: %v", f.name, ferr)
+				return false, nil
+			}
+			return true, nil
+		},
+	)
+
+	if err != nil {
+		errCh <- err
+	}
+	return nil
 }
 
 func (o *ClusterUninstaller) findResources() (err error) {
@@ -878,7 +921,6 @@ func (o *ClusterUninstaller) deleteEcsInstances() (err error) {
 	}
 
 	o.Logger.Debugf("Start to delete ECS instances %q", instanceIDs)
-
 	request := ecs.CreateDeleteInstancesRequest()
 	request.InstanceId = &instanceIDs
 	request.Force = "true"
@@ -1210,7 +1252,7 @@ func (o *ClusterUninstaller) deleteDNSRecords() (err error) {
 		},
 	)
 	if err != nil {
-		return
+		return err
 	}
 
 	return nil
