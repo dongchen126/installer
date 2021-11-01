@@ -236,8 +236,40 @@ func (client *Client) ListDNSDomain(baseDomain string) (response *alidns.Describ
 func (client *Client) ListPrivateZones(zoneName string) (response *pvtz.DescribeZonesResponse, err error) {
 	request := pvtz.CreateDescribeZonesRequest()
 	request.Lang = "en"
-	request.Keyword = zoneName
+	if zoneName != "" {
+		request.Keyword = zoneName
+	}
 	response = &pvtz.DescribeZonesResponse{
+		BaseResponse: &responses.BaseResponse{},
+	}
+	err = client.doActionWithSetDomain(request, response)
+	return
+}
+
+// ListVpcs gets the list of VPCs.
+func (client *Client) ListVpcs(vpcID string) (response *vpc.DescribeVpcsResponse, err error) {
+	request := vpc.CreateDescribeVpcsRequest()
+	request.RegionId = client.RegionID
+	if vpcID != "" {
+		request.VpcId = vpcID
+	}
+
+	response = &vpc.DescribeVpcsResponse{
+		BaseResponse: &responses.BaseResponse{},
+	}
+	err = client.doActionWithSetDomain(request, response)
+	return
+}
+
+// ListVSwitchs gets the list of VSwitchs.
+func (client *Client) ListVSwitchs(vswitchID string) (response *vpc.DescribeVSwitchesResponse, err error) {
+	request := vpc.CreateDescribeVSwitchesRequest()
+	request.RegionId = client.RegionID
+	if vswitchID != "" {
+		request.VSwitchId = vswitchID
+	}
+
+	response = &vpc.DescribeVSwitchesResponse{
 		BaseResponse: &responses.BaseResponse{},
 	}
 	err = client.doActionWithSetDomain(request, response)

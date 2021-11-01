@@ -12,6 +12,27 @@ type Platform struct {
 	// +optional
 	ResourceGroupID string `json:"resourceGroupID"`
 
+	// VpcID is the ID of an already existing VPC where the cluster should be installed.
+	// If empty, a new VPC will created for the cluster.
+	// Destroying the cluster using installer will delete this VPC.
+	// +optional
+	VpcID string `json:"vpcID,omitempty"`
+
+	// VSwitchIDs is the ID list of already existing VSwitchs where the master should be created.
+	// If empty, the new VSwitchs will created for the cluster.
+	// Destroying the cluster using installer will delete these VSwitchs.
+	// +optional
+	VSwitchIDs []string `json:"vswitchIDs,omitempty"`
+
+	// PrivateZoneID is the ID of an existing private zone into which to add DNS
+	// records for the cluster's internal API. An existing private zone can
+	// only be used when also using existing vpc. The private zone must be
+	// associated with the VPC containing the subnets.
+	// Leave the private zone unset to have the installer create the private zone
+	// on your behalf.
+	// +optional
+	PrivateZoneID string `json:"privateZoneID,omitempty"`
+
 	// Tags additional keys and values that the installer will add
 	// as tags to all resources that it creates. Resources created by the
 	// cluster itself may not include these tags.

@@ -36,7 +36,15 @@ func validatePlatform(client *Client, ic *types.InstallConfig, path *field.Path)
 	if ic.AlibabaCloud.ResourceGroupID != "" {
 		allErrs = append(allErrs, validateResourceGroup(client, ic, path)...)
 	}
-
+	if ic.AlibabaCloud.VpcID != "" {
+		allErrs = append(allErrs, validateVpc(client, ic, path)...)
+	}
+	if ic.AlibabaCloud.VSwitchIDs != nil {
+		allErrs = append(allErrs, validateVSwitchs(client, ic, path)...)
+	}
+	if ic.AlibabaCloud.PrivateZoneID != "" {
+		allErrs = append(allErrs, validatePrivateZoneID(client, ic, path)...)
+	}
 	if ic.Platform.AlibabaCloud.DefaultMachinePlatform != nil {
 		allErrs = append(allErrs, validateMachinePool(client, ic, path.Child("defaultMachinePlatform"), ic.Platform.AlibabaCloud.DefaultMachinePlatform, nil)...)
 	}
@@ -100,6 +108,56 @@ func validateResourceGroup(client *Client, ic *types.InstallConfig, path *field.
 	return append(allErrs, field.NotFound(path.Child("resourceGroupID"), ic.AlibabaCloud.ResourceGroupID))
 }
 
+func validateVpc(client *Client, ic *types.InstallConfig, path *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+	vpcs, err := client.ListVpcs(ic.AlibabaCloud.VpcID)
+	if err != nil {
+		return append(allErrs, field.InternalError(path.Child("vpcID"), err))
+	}
+	if vpcs.TotalCount == 1 {
+		return allErrs
+	}
+	return append(allErrs, field.NotFound(path.Child("vpcID"), ic.AlibabaCloud.VpcID))
+}
+
+func validateVSwitchs(client *Client, ic *types.InstallConfig, path *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if ic.AlibabaCloud.VpcID == "" {
+		return append(allErrs, field.Required(path.Child("vswitchIDs"), "Use the existing VSwitchs, vpcID must be specified"))
+	}
+
+	for _, id := range ic.AlibabaCloud.VSwitchIDs {
+		vswitchs, err := client.ListVSwitchs(id)
+		if err != nil {
+			return append(allErrs, field.InternalError(path.Child("vswitchIDs"), err))
+		}
+		if vswitchs.TotalCount != 1 {
+			allErrs = append(allErrs, field.NotFound(path.Child("vswitchIDs"), id))
+			continue
+		}
+		if vswitchs.VSwitches.VSwitch[0].VpcId != ic.AlibabaCloud.VpcID {
+			allErrs = append(allErrs, field.Invalid(path.Child("vswitchIDs"), id, fmt.Sprintf("The VSwitch %s does not belong to vpc %s", id, ic.AlibabaCloud.VpcID)))
+		}
+	}
+
+	return allErrs
+}
+
+func validatePrivateZoneID(client *Client, ic *types.InstallConfig, path *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+	zones, err := client.ListPrivateZones("")
+	if err != nil {
+		return append(allErrs, field.InternalError(path.Child("privateZoneID"), err))
+	}
+	for _, zone := range zones.Zones.Zone {
+		if zone.ZoneId == ic.AlibabaCloud.PrivateZoneID {
+			return allErrs
+		}
+	}
+	return append(allErrs, field.NotFound(path.Child("privateZoneID"), ic.AlibabaCloud.PrivateZoneID))
+}
+
 // ValidateForProvisioning validates if the install config is valid for provisioning the cluster.
 func ValidateForProvisioning(client *Client, ic *types.InstallConfig, metadata *Metadata) error {
 	allErrs := field.ErrorList{}
@@ -116,7 +174,7 @@ func validateClusterName(client *Client, ic *types.InstallConfig) field.ErrorLis
 	if err != nil {
 		allErrs = append(allErrs, field.InternalError(namePath, err))
 	}
-	if response.TotalItems > 0 {
+	if response.TotalItems > 0 && ic.AlibabaCloud.PrivateZoneID == "" {
 		allErrs = append(allErrs, field.Invalid(namePath, ic.ClusterName, fmt.Sprintf("cluster name is unavailable, private zone name %s already exists", zoneName)))
 	}
 	return allErrs

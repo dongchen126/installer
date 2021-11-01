@@ -1,9 +1,9 @@
 output "vpc_id" {
-  value = alicloud_vpc.vpc.id
+  value = local.vpc_id
 }
 
 output "vswitch_ids" {
-  value = alicloud_vswitch.vswitchs.*.id
+  value = local.vswitch_ids
 }
 
 output "gw_id" {

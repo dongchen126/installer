@@ -679,6 +679,9 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 		data, err := alibabacloudtfvars.TFVars(
 			alibabacloudtfvars.TFVarsSources{
 				Auth:                  auth,
+				VpcID:                 installConfig.Config.AlibabaCloud.VpcID,
+				VSwitchIDs:            installConfig.Config.AlibabaCloud.VSwitchIDs,
+				PrivateZoneID:         installConfig.Config.AlibabaCloud.PrivateZoneID,
 				ResourceGroupID:       installConfig.Config.AlibabaCloud.ResourceGroupID,
 				BaseDomain:            installConfig.Config.BaseDomain,
 				NatGatewayZoneID:      natGatewayZoneID,

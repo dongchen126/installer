@@ -2,6 +2,10 @@ variable "cluster_id" {
   type = string
 }
 
+variable "private_zone_id" {
+  type = string
+  default = null
+}
 variable "resource_group_id" {
   type = string
 }

@@ -17,6 +17,8 @@ provider "alicloud" {
 
 module "vpc" {
   source              = "./vpc"
+  vpc_id              = var.ali_vpc_id
+  vswitch_ids         = var.ali_vswitch_ids
   cluster_id          = var.cluster_id
   region_id           = var.ali_region_id
   zone_ids            = var.ali_zone_ids
@@ -29,6 +31,7 @@ module "vpc" {
 module "dns" {
   source            = "./dns"
   cluster_id        = var.cluster_id
+  private_zone_id   = var.ali_private_zone_id
   resource_group_id = module.vpc.resource_group_id
   vpc_id            = module.vpc.vpc_id
   cluster_domain    = var.cluster_domain
